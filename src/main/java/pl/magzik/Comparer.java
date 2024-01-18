@@ -66,30 +66,24 @@ public abstract class Comparer<T extends Record> {
     public String generateTypePattern(){
         StringBuilder types = new StringBuilder();
         Arrays.stream(acceptedTypes).forEach(
-                type -> types.append(String.format(".*\\.%s$|", type))
+            type -> types.append(String.format(".*\\.%s$|", type).toLowerCase())
+                        .append(String.format(".*\\.%s$|", type).toUpperCase())
         );
 
         return types.toString();
     }
 
-    public void _init() throws IOException{
-        /*if (this.sourceFiles == null ){
-            if(this.sourceDirectory == null || !this.sourceDirectory.isDirectory())
-                throw new IOException();
-
-            this.sourceFiles = Arrays.asList(Objects.requireNonNull(sourceDirectory.listFiles(File::isFile)));
-        }*/
-
+    public void _init() {
         String pattern = generateTypePattern();
 
         sourceFiles.stream()
-                .filter(file -> file.getName().matches(pattern))
-                .forEach(f -> totalObjectCount++);
+            .filter(file -> file.getName().matches(pattern))
+            .forEach(f -> totalObjectCount++);
     }
 
     public abstract void map() throws IOException;
 
-    public abstract void findDuplicates();
+    public abstract void extractDuplicates();
 
     public abstract void moveDuplicates();
 }
