@@ -1,7 +1,6 @@
 package pl.magzik;
 
 import pl.magzik.Structures.ImageRecord;
-import pl.magzik.Structures.Utils.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,9 +9,17 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-public class PictureComparer extends Comparer<ImageRecord> implements Logger {
+public class PictureComparer extends Comparer<ImageRecord> {
     public PictureComparer(List<File> sourceFiles, File sourceDirectory, File destDirectory) throws IOException {
         super(sourceFiles, sourceDirectory, destDirectory);
+        super.acceptedTypes = ImageRecord.acceptedTypes;
+        _setUp(sourceFiles, sourceDirectory, destDirectory);
+
+        log("Picture Comparer initialized");
+    }
+
+    public PictureComparer() throws IOException {
+        super();
         super.acceptedTypes = ImageRecord.acceptedTypes;
 
         log("Picture Comparer initialized");
@@ -28,6 +35,8 @@ public class PictureComparer extends Comparer<ImageRecord> implements Logger {
 
     @Override
     public void map() {
+        // Method
+
         log("Mapping files.");
 
         String pattern = super.generateTypePattern();
@@ -57,7 +66,7 @@ public class PictureComparer extends Comparer<ImageRecord> implements Logger {
     }
 
     @Override
-    public void extractDuplicates() {
+    public void compare() {
         log("Extracting duplicates");
 
         ArrayList<ImageRecord> duplicates = new ArrayList<>();
@@ -73,7 +82,7 @@ public class PictureComparer extends Comparer<ImageRecord> implements Logger {
     }
 
     @Override
-    public void moveDuplicates() {
+    public void move() {
         log("Moving duplicated images");
         String separator = File.separator;
         super.duplicates.forEach(
@@ -90,11 +99,5 @@ public class PictureComparer extends Comparer<ImageRecord> implements Logger {
                 }
             }
         );
-    }
-
-    @Override
-    public void log(String msg) {
-        System.out.printf("PictureComparer -> %s%n", msg);
-        System.out.flush();
     }
 }

@@ -7,9 +7,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 
 public class ImageRecord extends Record<BufferedImage> {
     public final static String[] acceptedTypes = ImageIO.getReaderFileSuffixes();
