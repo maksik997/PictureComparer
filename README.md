@@ -1,7 +1,7 @@
 # WARNING!
 The library is not tested on a large scale, so be warned about that.
 
-# Usage of app for version `0.3` or later:
+# Usage of library for version `0.3` or later:
 It's straightforward. Only what you need to do is:
 1. Prepare yourself **destination directory** *(where files will be moved if they're duplicates)*, **source directory** or **list of files** *(files/directory that you want to compare files in)*,
 2. Create `PictureComparer` object *(with either blank constructor or with your destination and source files/directory that you prepared in a previous step)*,
