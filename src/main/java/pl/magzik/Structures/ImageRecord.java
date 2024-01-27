@@ -39,7 +39,10 @@ public class ImageRecord extends Record<BufferedImage> {
             Checksum.algorithm.update(byteStream.toByteArray());
             byteStream.close();
         } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            // skip the file and set checksum = 0
+            System.out.println(ex.getMessage());
+            setChecksum(0L);
+            return;
         }
 
         super.setChecksum(Checksum.algorithm.getValue());
