@@ -14,7 +14,7 @@ It's straightforward. Only what you need to do is:
 ### Note:
 * Files extensions supported: all that are supported by `ImageIO` class.
 * App was tested on Windows 11.
-* Jdk version: 21
+* Jdk version: 21 **(works for jdk-19)**
 ### Code snippet:
 ```java
 // Creating my source files
