@@ -1,5 +1,8 @@
+Author: Maksymilian Strzelczak
+
 # WARNING!
 The library is not tested on a large scale, so be warned about that.
+It should work for few thousand images etc.
 
 # Usage of library for version `0.3` or later:
 It's straightforward. Only what you need to do is:
