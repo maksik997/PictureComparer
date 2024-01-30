@@ -16,7 +16,7 @@ public abstract class Comparer<T extends Record> implements Logger {
     protected HashMap<Long, ArrayList<T>> mappedObjects;
 
                  // total number of valid files
-    protected int totalObjectCount, processedObjectCount;
+    protected int totalObjectCount, processedObjectCount, duplicatesObjectCount;
                               //  total number of processed Objects
 
     protected List<File> sourceFiles;
@@ -24,6 +24,8 @@ public abstract class Comparer<T extends Record> implements Logger {
     protected File sourceDirectory, destDirectory;
 
     protected String[] acceptedTypes;
+
+    private static final boolean echo = false;
 
     public Comparer(List<File> sourceFiles, File sourceDirectory, File destDirectory) throws IOException {
         _setUp(sourceFiles, sourceDirectory, destDirectory);
@@ -47,6 +49,10 @@ public abstract class Comparer<T extends Record> implements Logger {
 
     public int getProcessedObjectCount() {
         return processedObjectCount;
+    }
+
+    public int getDuplicatesObjectCount() {
+        return duplicatesObjectCount;
     }
 
     public void _setUp(File sourceDirectory, File destDirectory) throws IOException {
@@ -119,7 +125,9 @@ public abstract class Comparer<T extends Record> implements Logger {
 
     @Override
     public void log(String msg) {
-        System.out.printf("Comparer -> %s%n", msg);
-        System.out.flush();
+        if(echo) {
+            System.out.printf("Comparer -> %s%n", msg);
+            System.out.flush();
+        }
     }
 }
