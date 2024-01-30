@@ -13,6 +13,8 @@ It's straightforward. Only what you need to do is:
 5. And lastly in case you would want to re-use this object, you can call `_reset()` method, that will clear a whole object. *(After resetting an object you should then call `_setUp(<source files/directory>, <destination directory>)` method)*
 ### Note:
 * Files extensions supported: all that are supported by `ImageIO` class.
+* App was tested on Windows 11.
+* Jdk version: 21
 ### Code snippet:
 ```java
 // Creating my source files
