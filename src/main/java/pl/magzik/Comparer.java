@@ -12,6 +12,10 @@ import java.io.IOException;
 import java.util.*;
 
 public abstract class Comparer<T extends Record> implements Logger {
+    // todo
+    //  Fix total numbers count,
+    //  Consider eliminating corrupted/not matching files,
+
     protected ArrayList<T> duplicates;
     protected HashMap<Long, ArrayList<T>> mappedObjects;
 
@@ -25,7 +29,9 @@ public abstract class Comparer<T extends Record> implements Logger {
 
     protected String[] acceptedTypes;
 
-    private static final boolean echo = false;
+    protected byte[][] formatMagicNumbers;
+
+    public static boolean echo = false;
 
     public Comparer(List<File> sourceFiles, File sourceDirectory, File destDirectory) throws IOException {
         _setUp(sourceFiles, sourceDirectory, destDirectory);
@@ -91,8 +97,8 @@ public abstract class Comparer<T extends Record> implements Logger {
         if(acceptedTypes != null) {
             String pattern = generateTypePattern();
             this.sourceFiles.stream()
-                    .filter(file -> file.getName().matches(pattern))
-                    .forEach(f -> totalObjectCount++);
+                .filter(file -> file.getName().matches(pattern))
+                .forEach(f -> totalObjectCount++);
         }
     }
 
