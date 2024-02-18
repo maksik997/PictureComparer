@@ -1,5 +1,6 @@
 package pl.magzik.Structures.Utils;
 
-public interface Logger {
+public interface LoggingInterface {
+
     void log(String msg);
 }
