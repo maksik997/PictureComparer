@@ -6,6 +6,7 @@ Largest test date size: 19 GB (about 16 628 different files).
 
 ## Information:
 - Please report any bugs on my Github
+- In case you want to use setMode method, instead of using _setUp overload, then you should use setMode method before invoking _setUp method.
 
 # Usage of library for version `0.3` or later:
 It's straightforward. Only what you need to do is:

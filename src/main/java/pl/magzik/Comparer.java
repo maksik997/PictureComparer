@@ -29,20 +29,36 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
 
     protected byte[][] formatMagicNumbers;
 
-    public Comparer(List<File> sourceFiles, File sourceDirectory, File destDirectory) {
+    protected Modes mode;
+
+    public enum Modes{
+        // All modes that you can use.
+        RECURSIVE, NOT_RECURSIVE
+    }
+
+    private int longestHeaderLength;
+
+    public Comparer(List<File> sourceFiles, File sourceDirectory, File destDirectory, Modes mode) {
+        this.mode = mode;
+        if (mode == null) {
+            this.mode = Modes.NOT_RECURSIVE;
+        }
+
         _setUp(sourceFiles, sourceDirectory, destDirectory);
     }
 
     public Comparer() {
+        this.mode = Modes.NOT_RECURSIVE;
+
         _reset();
     }
 
     public Comparer(File sourceDirectory, File destDirectory) {
-        this(null, sourceDirectory, destDirectory);
+        this(null, sourceDirectory, destDirectory, Modes.NOT_RECURSIVE);
     }
 
     public Comparer(List<File> sourceFiles, File destDirectory) {
-        this(sourceFiles, null, destDirectory);
+        this(sourceFiles, null, destDirectory, Modes.NOT_RECURSIVE);
     }
 
     public long getTotalObjectCount() {
@@ -61,19 +77,45 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
         return duplicates;
     }
 
+    public Modes getMode() {
+        return mode;
+    }
+
+    public void setMode(Modes mode) {
+        this.mode = mode;
+    }
+
     public ConcurrentHashMap<Long, CopyOnWriteArrayList<T>> getMappedObjects() {
         return mappedObjects;
     }
 
     public void _setUp(File sourceDirectory, File destDirectory) {
-        _setUp(null, sourceDirectory, destDirectory);
+        _setUp(null, sourceDirectory, destDirectory, null);
+    }
+
+    public void _setUp(File sourceDirectory, File destDirectory, Modes mode) {
+        _setUp(null, sourceDirectory, destDirectory, mode);
     }
 
     public void _setUp(List<File> sourceFiles, File destDirectory) {
-        _setUp(sourceFiles, null, destDirectory);
+        _setUp(sourceFiles, null, destDirectory, null);
     }
 
-    public void _setUp(List<File> sourceFiles, File sourceDirectory, File destDirectory){
+    public void _setUp(List<File> sourceFiles, File destDirectory, Modes mode) {
+        _setUp(sourceFiles, null, destDirectory, mode);
+    }
+
+    public void _setUp(List<File> sourceFiles, File sourceDirectory, File destDirectory) {
+        this._setUp(sourceFiles, sourceDirectory, destDirectory, null);
+    }
+
+    public void _setUp(List<File> sourceFiles, File sourceDirectory, File destDirectory, Modes mode){
+        this.mode = mode;
+        if(this.mode == null) {
+            this.mode = Modes.NOT_RECURSIVE;
+        }
+
+        log("Setting up Comparer");
         if (
             this.duplicates != null ||
             this.mappedObjects != null ||
@@ -84,12 +126,14 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
             this.destDirectory != null
         ) {
             _reset();
+            log("Comparer reset complete");
         }
 
         this.sourceFiles = sourceFiles;
         this.sourceDirectory = sourceDirectory;
         this.destDirectory = destDirectory;
 
+        log("Reducing data set only to valid files.");
         if (this.sourceFiles == null){
             if(this.sourceDirectory == null || !this.sourceDirectory.isDirectory()){
                 log(new IOException("Couldn't find any source files."), "Couldn't find any source files.");
@@ -97,12 +141,13 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
             }
 
             this.sourceFiles = Arrays.asList(Objects.requireNonNull(
-                this.sourceDirectory.listFiles(File::isFile)
+                this.sourceDirectory.listFiles()
             ));
         }
 
+        log("Preparing magic headers for reduction.");
         // Take only valid files for this type of Comparer
-        int longestHeaderLength = Arrays.stream(formatMagicNumbers)
+        longestHeaderLength = Arrays.stream(formatMagicNumbers)
                 .map(b -> b.length)
                 .max(Integer::compareTo).orElse(0);
         if(longestHeaderLength == 0) {
@@ -110,36 +155,37 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
             throw new RuntimeException("Please refer to error.txt log file.");
         }
 
+        log("Preparing data structures for reduction");
+        List<File> directories = null;
+        if (mode == Modes.RECURSIVE)
+            directories = List.copyOf(this.sourceFiles).stream().filter(File::isDirectory).toList();
+
+        log("Reducing not valid files");
         this.sourceFiles =
-        this.sourceFiles.stream().filter(f -> {
-            try (FileInputStream fis = new FileInputStream(f)) {
-                byte[] header = new byte[longestHeaderLength];
-                if(fis.read(header) == -1)
-                    return false; // The file couldn't be an image if it's too small
+        this.sourceFiles.stream().filter(File::isFile).filter(this::filePredicate).collect(Collectors.toList());
 
-                for (byte[] formatHeader : formatMagicNumbers) {
-                    int i = 0;
-                    boolean isValid = true;
-                    for (byte formatByte : formatHeader) {
-                        if (formatByte != header[i++]){
-                            isValid = false;
-                            break;
-                        }
+        if (mode == Modes.RECURSIVE && directories != null) {
+            log("Recursive directory search.");
+            directories.stream()
+                .filter(File::isDirectory)
+                .forEach(d -> {
+                    File[] files = d.listFiles();
+                    if (files == null || files.length == 0) {
+                        return;
                     }
-                    if (isValid) return true;
-                }
+                    List<File> dirFiles =
+                    Arrays.stream(files).filter(this::filePredicate).toList();
 
-                return false;
-            } catch (IOException e) {
-                log(e, "There was an error while operating on files.");
-                throw new RuntimeException("Please refer to error.txt log file.");
-            }
-        }).collect(Collectors.toList());
+                    this.sourceFiles.addAll(dirFiles);
+                });
+        }
 
         totalObjectCount = this.sourceFiles.size();
     }
 
     public void _reset() {
+        log("Resetting Comparer.");
+
         this.duplicates = null;
         this.mappedObjects = null;
         this.totalObjectCount = 0;
@@ -154,6 +200,31 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
     public abstract void compare();
 
     public abstract void move();
+
+    private boolean filePredicate(File f) {
+        try (FileInputStream fis = new FileInputStream(f)) {
+            byte[] header = new byte[longestHeaderLength];
+            if(fis.read(header) == -1)
+                return false; // The file couldn't be an image if it's too small
+
+            for (byte[] formatHeader : formatMagicNumbers) {
+                int i = 0;
+                boolean isValid = true;
+                for (byte formatByte : formatHeader) {
+                    if (formatByte != header[i++]){
+                        isValid = false;
+                        break;
+                    }
+                }
+                if (isValid) return true;
+            }
+
+            return false;
+        } catch (IOException e) {
+            log(e, "There was an error while operating on files.");
+            throw new RuntimeException("Please refer to error.txt log file.");
+        }
+    }
 
     @Override
     public void log(String msg) {

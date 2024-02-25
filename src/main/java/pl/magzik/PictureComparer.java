@@ -29,8 +29,8 @@ public class PictureComparer extends Comparer<ImageRecord> {
         {(byte)0xff, (byte)0x4f, (byte)0xff, (byte)0x51,},
     };
 
-    public PictureComparer(List<File> sourceFiles, File sourceDirectory, File destDirectory) {
-        super(sourceFiles, sourceDirectory, destDirectory);
+    public PictureComparer(List<File> sourceFiles, File sourceDirectory, File destDirectory, Comparer.Modes mode) {
+        super(sourceFiles, sourceDirectory, destDirectory, mode);
         super.formatMagicNumbers  = imageMagicNumbers;
         _setUp(sourceFiles, sourceDirectory, destDirectory);
 
@@ -44,11 +44,11 @@ public class PictureComparer extends Comparer<ImageRecord> {
     }
 
     public PictureComparer(File sourceDirectory, File destDirectory) {
-        this(null, sourceDirectory, destDirectory);
+        this(null, sourceDirectory, destDirectory, null);
     }
 
     public PictureComparer(List<File> sourceFiles, File destDirectory) {
-        this(sourceFiles, null, destDirectory);
+        this(sourceFiles, null, destDirectory, null);
     }
 
     @Override
