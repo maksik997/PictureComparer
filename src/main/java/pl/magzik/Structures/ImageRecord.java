@@ -1,7 +1,5 @@
 package pl.magzik.Structures;
 
-import pl.magzik.Structures.Utils.Checksum;
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -9,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 
 public class ImageRecord extends Record<BufferedImage> {
-    public final static String[] acceptedTypes = ImageIO.getReaderFileSuffixes();
 
     public ImageRecord(File file) throws IOException {
         super(file);
@@ -36,7 +33,7 @@ public class ImageRecord extends Record<BufferedImage> {
 
         try {
             ImageIO.write(e, extension, byteStream);
-            Checksum.algorithm.update(byteStream.toByteArray());
+            Record.algorithm.update(byteStream.toByteArray());
             byteStream.close();
         } catch (IOException ex) {
             // skip the file and set checksum = 0
@@ -45,7 +42,7 @@ public class ImageRecord extends Record<BufferedImage> {
             return;
         }
 
-        super.setChecksum(Checksum.algorithm.getValue());
-        Checksum.algorithm.reset();
+        super.setChecksum(Record.algorithm.getValue());
+        Record.algorithm.reset();
     }
 }

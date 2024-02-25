@@ -29,7 +29,7 @@ public class PictureComparer extends Comparer<ImageRecord> {
         {(byte)0xff, (byte)0x4f, (byte)0xff, (byte)0x51,},
     };
 
-    public PictureComparer(List<File> sourceFiles, File sourceDirectory, File destDirectory) throws IOException {
+    public PictureComparer(List<File> sourceFiles, File sourceDirectory, File destDirectory) {
         super(sourceFiles, sourceDirectory, destDirectory);
         super.formatMagicNumbers  = imageMagicNumbers;
         _setUp(sourceFiles, sourceDirectory, destDirectory);
@@ -37,17 +37,17 @@ public class PictureComparer extends Comparer<ImageRecord> {
         log("Picture Comparer initialized");
     }
 
-    public PictureComparer() throws IOException {
+    public PictureComparer() {
         super();
         super.formatMagicNumbers  = imageMagicNumbers;
         log("Picture Comparer initialized");
     }
 
-    public PictureComparer(File sourceDirectory, File destDirectory) throws IOException {
+    public PictureComparer(File sourceDirectory, File destDirectory) {
         this(null, sourceDirectory, destDirectory);
     }
 
-    public PictureComparer(List<File> sourceFiles, File destDirectory) throws IOException {
+    public PictureComparer(List<File> sourceFiles, File destDirectory) {
         this(sourceFiles, null, destDirectory);
     }
 
@@ -71,6 +71,7 @@ public class PictureComparer extends Comparer<ImageRecord> {
                 } catch (IOException e) {
                     // skip that file
                     log(String.format("Skipping file: %s", file.getName()));
+                    log(e, String.format("Skipping file: %s", file.getName()));
                 }
             }
         );
@@ -111,7 +112,8 @@ public class PictureComparer extends Comparer<ImageRecord> {
                             StandardCopyOption.REPLACE_EXISTING
                         );
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        log(e, e.getMessage());
+                        throw new RuntimeException("Please refer ti error.txt log file.");
                     }
                 }
             );

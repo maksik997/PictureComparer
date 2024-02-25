@@ -1,6 +1,7 @@
 /*
     This class holds all simple operations needed to compare.
-    However, you'll need to define three different methods
+    However, you'll need to define three different methods.
+    This class also is exclusively good for complex types (like images and files)
 */
 package pl.magzik;
 
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 
 import org.tinylog.Logger;
 
-public abstract class Comparer<T extends Record> implements LoggingInterface {
+public abstract class Comparer<T extends Record<?>> implements LoggingInterface {
     protected CopyOnWriteArrayList<T> duplicates;
     protected ConcurrentHashMap<Long, CopyOnWriteArrayList<T>> mappedObjects;
 
@@ -28,21 +29,19 @@ public abstract class Comparer<T extends Record> implements LoggingInterface {
 
     protected byte[][] formatMagicNumbers;
 
-    public static boolean echo = false; // tmp
-
-    public Comparer(List<File> sourceFiles, File sourceDirectory, File destDirectory) throws IOException {
+    public Comparer(List<File> sourceFiles, File sourceDirectory, File destDirectory) {
         _setUp(sourceFiles, sourceDirectory, destDirectory);
     }
 
-    public Comparer() throws IOException {
+    public Comparer() {
         _reset();
     }
 
-    public Comparer(File sourceDirectory, File destDirectory) throws IOException {
+    public Comparer(File sourceDirectory, File destDirectory) {
         this(null, sourceDirectory, destDirectory);
     }
 
-    public Comparer(List<File> sourceFiles, File destDirectory) throws IOException {
+    public Comparer(List<File> sourceFiles, File destDirectory) {
         this(sourceFiles, null, destDirectory);
     }
 
@@ -66,15 +65,15 @@ public abstract class Comparer<T extends Record> implements LoggingInterface {
         return mappedObjects;
     }
 
-    public void _setUp(File sourceDirectory, File destDirectory) throws IOException {
+    public void _setUp(File sourceDirectory, File destDirectory) {
         _setUp(null, sourceDirectory, destDirectory);
     }
 
-    public void _setUp(List<File> sourceFiles, File destDirectory) throws IOException {
+    public void _setUp(List<File> sourceFiles, File destDirectory) {
         _setUp(sourceFiles, null, destDirectory);
     }
 
-    public void _setUp(List<File> sourceFiles, File sourceDirectory, File destDirectory) throws IOException {
+    public void _setUp(List<File> sourceFiles, File sourceDirectory, File destDirectory){
         if (
             this.duplicates != null ||
             this.mappedObjects != null ||
@@ -92,8 +91,10 @@ public abstract class Comparer<T extends Record> implements LoggingInterface {
         this.destDirectory = destDirectory;
 
         if (this.sourceFiles == null){
-            if(this.sourceDirectory == null || !this.sourceDirectory.isDirectory())
-                throw new IOException("Couldn't find any source files.");
+            if(this.sourceDirectory == null || !this.sourceDirectory.isDirectory()){
+                log(new IOException("Couldn't find any source files."), "Couldn't find any source files.");
+                throw new RuntimeException("Please refer to error.txt log file.");
+            }
 
             this.sourceFiles = Arrays.asList(Objects.requireNonNull(
                 this.sourceDirectory.listFiles(File::isFile)
@@ -104,8 +105,10 @@ public abstract class Comparer<T extends Record> implements LoggingInterface {
         int longestHeaderLength = Arrays.stream(formatMagicNumbers)
                 .map(b -> b.length)
                 .max(Integer::compareTo).orElse(0);
-        if(longestHeaderLength == 0)
-            throw new RuntimeException(); // magic header not assigned
+        if(longestHeaderLength == 0) {
+            log(new RuntimeException(), "Magic header was not assigned.");
+            throw new RuntimeException("Please refer to error.txt log file.");
+        }
 
         this.sourceFiles =
         this.sourceFiles.stream().filter(f -> {
@@ -128,7 +131,8 @@ public abstract class Comparer<T extends Record> implements LoggingInterface {
 
                 return false;
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                log(e, "There was an error while operating on files.");
+                throw new RuntimeException("Please refer to error.txt log file.");
             }
         }).collect(Collectors.toList());
 
@@ -144,7 +148,7 @@ public abstract class Comparer<T extends Record> implements LoggingInterface {
         this.sourceDirectory = null;
         this.destDirectory = null;
 
-        System.gc(); // todo test if applicable and if it's needed
+        System.gc(); // Fun-fact, it is effective in that case.
     }
 
     public abstract void map() throws IOException;
@@ -156,5 +160,10 @@ public abstract class Comparer<T extends Record> implements LoggingInterface {
     @Override
     public void log(String msg) {
         Logger.info(msg);
+    }
+
+    @Override
+    public void log(Exception ex, String msg) {
+        Logger.error(ex, msg);
     }
 }
