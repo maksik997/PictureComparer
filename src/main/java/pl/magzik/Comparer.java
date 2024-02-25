@@ -164,7 +164,7 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
         this.sourceFiles =
         this.sourceFiles.stream().filter(File::isFile).filter(this::filePredicate).collect(Collectors.toList());
 
-        if (mode == Modes.RECURSIVE && directories != null) {
+        if (mode == Modes.RECURSIVE) {
             log("Recursive directory search.");
             directories.stream()
                 .filter(File::isDirectory)
