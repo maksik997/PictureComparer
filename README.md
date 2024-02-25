@@ -1,8 +1,11 @@
-Author: Maksymilian Strzelczak
+Author: [Github](https://github.com/maksik997)
 
 # WARNING!
 The library is not tested on a large scale, so be warned about that.
-It should work for few thousand images etc.
+Largest test date size: 19 GB (about 16 628 different files).
+
+## Information:
+- Please report any bugs on my Github
 
 # Usage of library for version `0.3` or later:
 It's straightforward. Only what you need to do is:
@@ -14,7 +17,7 @@ It's straightforward. Only what you need to do is:
 ### Note:
 * Files extensions supported: all that are supported by `ImageIO` class.
 * App was tested on Windows 11.
-* Jdk version: 21 **(works for jdk-19)**
+* Jdk version: 19
 ### Code snippet:
 ```java
 // Creating my source files

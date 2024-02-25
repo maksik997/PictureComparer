@@ -147,8 +147,6 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
         this.sourceFiles = null;
         this.sourceDirectory = null;
         this.destDirectory = null;
-
-        System.gc(); // Fun-fact, it is effective in that case.
     }
 
     public abstract void map() throws IOException;

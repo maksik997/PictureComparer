@@ -1,12 +1,11 @@
 import pl.magzik.PictureComparer;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Test {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // Usage instruction:
         // Firstly, we need to create PictureComparer object,
         // next we prepare our files/directories, we use _setUp method with valid arguments,
