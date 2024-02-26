@@ -121,6 +121,7 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
             this.mappedObjects != null ||
             this.totalObjectCount > 0 ||
             this.processedObjectCount > 0 ||
+            this.duplicatesObjectCount > 0 ||
             this.sourceFiles != null ||
             this.sourceDirectory != null ||
             this.destDirectory != null
@@ -190,6 +191,7 @@ public abstract class Comparer<T extends Record<?>> implements LoggingInterface 
         this.mappedObjects = null;
         this.totalObjectCount = 0;
         this.processedObjectCount = 0;
+        this.duplicatesObjectCount = 0;
         this.sourceFiles = null;
         this.sourceDirectory = null;
         this.destDirectory = null;
