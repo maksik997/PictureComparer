@@ -1,18 +1,17 @@
 package pl.magzik;
 
-import pl.magzik.Structures.Record;
-
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
-public interface Comparer<T extends Record<?>> {
+public interface Comparer {
 
     // Comparer manipulation
 
-    void _setUp(File dest, Collection<File> source);
-    default void _setUp(File dest, File...source) {
+    void _setUp(File dest, Collection<File> source) throws FileNotFoundException;
+    default void _setUp(File dest, File...source) throws FileNotFoundException {
         _setUp(dest, Arrays.asList(source));
     }
 

@@ -29,12 +29,9 @@ public class ImageRecord extends Record<BufferedImage> {
         String[] fileNameArr = super.getFile().getName().split("\\.");
         String extension = fileNameArr[fileNameArr.length-1];
 
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-
-        try {
+        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream()) {
             ImageIO.write(e, extension, byteStream);
             Record.algorithm.update(byteStream.toByteArray());
-            byteStream.close();
         } catch (IOException ex) {
             // skip the file and set checksum = 0
             System.out.println(ex.getMessage());

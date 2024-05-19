@@ -6,14 +6,17 @@ import pl.magzik.Structures.Utils.LoggingInterface;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface {
+public class PictureComparer implements Comparer, LoggingInterface {
 
     private Map<Long, List<ImageRecord>> mappedObjects;
     private Queue<ImageRecord> duplicates;
@@ -21,7 +24,8 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
     private File destDirectory;
     private Comparer.Modes mode;
 
-    private int processedObjectCount;
+    // 0.5 - deprecated
+    //    private int processedObjectCount;
 
     // Magic numbers table
     // 0 -> JPEG, 1 -> PNG, 2 -> GIF(v1), 3 -> GIF(v2), 4 -> BMP, 5 -> TIFF(v1), 6 -> TIFF(v2), 7 -> ICO
@@ -69,12 +73,12 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
         _reset();
     }
 
-    public PictureComparer(File dest, Collection<File> source) {
+    public PictureComparer(File dest, Collection<File> source) throws FileNotFoundException {
         this();
         _setUp(dest, source);
     }
 
-    public PictureComparer(File dest, File... source) {
+    public PictureComparer(File dest, File... source) throws FileNotFoundException {
         this(dest, Arrays.asList(source));
     }
 
@@ -98,15 +102,16 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
         return mode;
     }
 
-    public int getProcessedObjectCount() {
-        return processedObjectCount;
-    }
+    // 0.5 - deprecated
+//    public int getProcessedObjectCount() {
+//        return processedObjectCount;
+//    }
 
     public int getTotalObjectCount() {
         return sourceFiles.size();
     }
 
-    public int getDuplicatesObejctCount() {
+    public int getDuplicatesObjectCount() {
         return duplicates.size();
     }
 
@@ -115,7 +120,7 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
     }
 
     @Override
-    public void _setUp(File dest, Collection<File> source) {
+    public void _setUp(File dest, Collection<File> source) throws FileNotFoundException {
         log("Setting Comparer up.");
         _reset();
 
@@ -133,32 +138,57 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
             throw new RuntimeException();
         }
 
+        AtomicBoolean notExistentCheck = new AtomicBoolean(false);
+        // if true -> there are not-existent files.
+        // if false -> there aren't not-existent files.
+
         source.stream()
                 .filter(f -> !f.exists())
                 .findAny()
-                .orElseThrow(RuntimeException::new);
+                .ifPresent(f -> notExistentCheck.set(true));
+
+        if (notExistentCheck.get())
+            throw new FileNotFoundException("Couldn't find given file.");
 
         log("Collecting data from source.");
 
         sourceFiles.addAll(
             source.stream()
             .filter(File::isFile)
+            .filter(this::filePredicate)
             .toList()
         );
 
+        // This takes a while (while running first, due to lack of indexing).
+        source.stream().filter(File::isDirectory)
+            .map(File::toPath)
+            .forEach(path-> {
+                try (Stream<Path> files = Files.list(path).parallel()){
+                    sourceFiles.addAll(
+                        files.map(Path::toFile)
+                        .filter(File::isFile)
+                        .filter(this::filePredicate)
+                        .toList()
+                    );
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
         if (mode == Modes.RECURSIVE) {
             log("Recursive data search.");
-            source.stream()
+            source.parallelStream()
             .filter(File::isDirectory)
             .map(File::toPath)
             .forEach(f -> {
                 try {
                     Files.walkFileTree(f, new SimpleFileVisitor<>(){
                         @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                            File tmp = file.toFile();
-                            if (tmp.isFile() && filePredicate(tmp)) {
-                                sourceFiles.add(tmp);
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                            File fileAsFile = file.toFile();
+
+                            if (fileAsFile.isFile() && filePredicate(fileAsFile) && !sourceFiles.contains(fileAsFile)) {
+                                sourceFiles.add(fileAsFile);
                             }
 
                             return FileVisitResult.CONTINUE;
@@ -181,7 +211,8 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
         this.mode = Comparer.Modes.NOT_RECURSIVE;
         this.mappedObjects = null;
         this.duplicates = null;
-        this.processedObjectCount = 0;
+        // 0.5 - deprecated
+//        this.processedObjectCount = 0;
         this.sourceFiles = new ArrayList<>();
         this.destDirectory = null;
 
@@ -193,22 +224,26 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
         // This method will map all files using parallel stream to map Checksum -> List of images.
         // Represents a relation where Checksum is checksum calculated of input image.
 
+        Function<File, ImageRecord> createImageRecord = file -> {
+            try {
+                // 0.5 deprecated.
+//                        processedObjectCount++;
+//                        log(String.format("Processed %d images from %d total", processedObjectCount, sourceFiles.size()));
+                return new ImageRecord(file);
+            } catch (IOException ex) {
+                log(String.format("Skipping file: %s", file.getName()));
+                log(ex, String.format("Skipping file: %s", file.getName()));
+            }
+            return null;
+        };
+
         log("Mapping files.");
-        // 0.5 - deprecated
+
+        // 0.5 - new
         mappedObjects = //new ConcurrentHashMap<>();
             sourceFiles.parallelStream()
-                .map(file -> {
-                    try {
-                        processedObjectCount++;
-                        log(String.format("Processed %d images from %d total", processedObjectCount, sourceFiles.size()));
-                        return new ImageRecord(file);
-                    } catch (IOException ex) {
-                        log(String.format("Skipping file: %s", file.getName()));
-                        log(ex, String.format("Skipping file: %s", file.getName()));
-                    }
-                    return null;
-                })
-                .filter(Objects::nonNull)
+                .map(createImageRecord)
+                .filter(Objects::nonNull) // Important!
                 .collect(Collectors.groupingBy(Record::getChecksum));
 
         /*sourceFiles 0.5 - deprecated
@@ -240,9 +275,11 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
         // 0.5 - new
         mappedObjects.keySet()
             .forEach(k -> duplicates.addAll(
-                mappedObjects.entrySet().stream()
+                mappedObjects.entrySet().parallelStream()
                     .filter(e -> !e.getValue().contains(null) && k.equals(e.getKey()))
-                    .flatMap(e -> Stream.of((ImageRecord[]) e.getValue().toArray())) // In theory, it's impossible to encounter here a null value
+                    .map(Map.Entry::getValue)
+                    .map(e -> e.subList(1, e.size()))
+                    .flatMap(List::stream)
                     .toList()
             ));
 
@@ -255,6 +292,7 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
         );*/
 
         this.duplicates = duplicates;
+
         log(String.format("Found %d duplicates from %d all images", duplicates.size(), sourceFiles.size()));
     }
 
@@ -300,6 +338,7 @@ public class PictureComparer implements Comparer<ImageRecord>, LoggingInterface 
 
     @Override
     public boolean filePredicate(File f) {
+
         try (FileInputStream is = new FileInputStream(f)) {
             byte[] header = new byte[longestHeaderLength];
 
