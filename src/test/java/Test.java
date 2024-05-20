@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Test {
+
     public static void main(String[] args) throws FileNotFoundException {
+
         // Usage instruction:
         // Firstly, we need to create PictureComparer object,
         // next we prepare our files/directories, we use _setUp method with valid arguments,

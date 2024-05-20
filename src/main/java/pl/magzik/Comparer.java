@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 public interface Comparer {
-
+  
     // Comparer manipulation
 
     void _setUp(File dest, Collection<File> source) throws FileNotFoundException;
@@ -18,9 +18,9 @@ public interface Comparer {
     default void _reset() {
         // In case someone wants to create a one-time Comparer
     }
-
+    
     // Data manipulation
-
+  
     void map() throws IOException;
     void compare();
     void move() throws IOException;
