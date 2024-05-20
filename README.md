@@ -33,10 +33,10 @@ files.add(new File("{file5}"));
 // Creating my destination directory
 File destination = new File("{destDir}");
 // Creating a Picture Comparer object
-PictureComparer pc = new PictureComparer(files, destination);
+PictureComparer pc = new PictureComparer(destinantion, files);
 // I could also use
 // PictureComparer pc = new PictureComparer();
-// pc._setUp(files, destination);
+// pc._setUp(destinantion, files);
 // Usage
 pc.map();
 pc.compare();
