@@ -1,8 +1,14 @@
 package pl.magzik.Structures.Utils;
 
+import org.tinylog.Logger;
+
 public interface LoggingInterface {
 
-    void log(String msg);
+    default void log(String msg) {
+        Logger.info(msg);
+    }
 
-    void log(Exception ex, String msg);
+    default void log(Exception ex, String msg) {
+        Logger.error(ex, msg);
+    }
 }
