@@ -16,7 +16,7 @@ public interface Comparer {
     }
 
     default void _reset() {
-        // In case someone want to create one-time Comparer
+        // In case someone wants to create a one-time Comparer
     }
 
     // Data manipulation
@@ -31,7 +31,6 @@ public interface Comparer {
         // Returns always true.
         return true;
     }
-
     enum Modes {
         RECURSIVE, NOT_RECURSIVE;
 

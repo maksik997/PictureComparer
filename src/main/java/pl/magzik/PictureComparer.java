@@ -14,18 +14,15 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class PictureComparer implements Comparer, LoggingInterface {
 
     private Map<Long, List<ImageRecord>> mappedObjects;
-    private Queue<ImageRecord> duplicates;
+    private List<ImageRecord> duplicates;
     private List<File> sourceFiles;
     private File destDirectory;
     private Comparer.Modes mode;
-
-    // 0.5 - deprecated
-    //    private int processedObjectCount;
+    private final FileVisitor fileVisitor;
 
     // Magic numbers table
     // 0 -> JPEG, 1 -> PNG, 2 -> GIF(v1), 3 -> GIF(v2), 4 -> BMP, 5 -> TIFF(v1), 6 -> TIFF(v2), 7 -> ICO
@@ -46,30 +43,8 @@ public class PictureComparer implements Comparer, LoggingInterface {
                                                             .map(b -> b.length)
                                                             .max(Integer::compareTo).orElse(0);
 
-    // deprecated 0.5
-    /*public PictureComparer(List<File> sourceFiles, File sourceDirectory, File destDirectory, Comparer.Modes mode) {
-        super(sourceFiles, sourceDirectory, destDirectory, mode);
-        //super.formatMagicNumbers  = imageMagicNumbers;
-        _setUp(sourceFiles, sourceDirectory, destDirectory);
-
-        log("Picture Comparer initialized");
-    }
-
     public PictureComparer() {
-        super();
-        super.formatMagicNumbers  = imageMagicNumbers;
-        log("Picture Comparer initialized");
-    }
-
-    public PictureComparer(File sourceDirectory, File destDirectory) {
-        this(null, sourceDirectory, destDirectory, null);
-    }
-
-    public PictureComparer(List<File> sourceFiles, File destDirectory) {
-        this(sourceFiles, null, destDirectory, null);
-    }*/
-
-    public PictureComparer() {
+        fileVisitor = new FileVisitor();
         _reset();
     }
 
@@ -86,7 +61,7 @@ public class PictureComparer implements Comparer, LoggingInterface {
         return mappedObjects;
     }
 
-    public Queue<ImageRecord> getDuplicates() {
+    public List<ImageRecord> getDuplicates() {
         return duplicates;
     }
 
@@ -102,11 +77,6 @@ public class PictureComparer implements Comparer, LoggingInterface {
         return mode;
     }
 
-    // 0.5 - deprecated
-//    public int getProcessedObjectCount() {
-//        return processedObjectCount;
-//    }
-
     public int getTotalObjectCount() {
         return sourceFiles.size();
     }
@@ -121,28 +91,32 @@ public class PictureComparer implements Comparer, LoggingInterface {
 
     @Override
     public void _setUp(File dest, Collection<File> source) throws FileNotFoundException {
+        // This method is called to set up whole comparer without calling this method
+        // (it is called also via constructor)
+        // you'll surely encounter major bugs.
+
         log("Setting Comparer up.");
         _reset();
 
         log("Validating data.");
         if(dest == null || source == null) {
-            throw new RuntimeException();
+            throw new NullPointerException("An argument is null.");
         }
         if(!dest.exists() || !dest.isDirectory()) {
-            throw new RuntimeException();
+            throw new IllegalArgumentException("Destination directory isn't a directory or doesn't exist.");
         }
 
         this.destDirectory = dest;
 
         if(source.isEmpty()) {
-            throw new RuntimeException();
+            throw new IllegalArgumentException("Sources are empty!");
         }
 
         AtomicBoolean notExistentCheck = new AtomicBoolean(false);
         // if true -> there are not-existent files.
         // if false -> there aren't not-existent files.
 
-        source.stream()
+        source.parallelStream()
                 .filter(f -> !f.exists())
                 .findAny()
                 .ifPresent(f -> notExistentCheck.set(true));
@@ -159,22 +133,6 @@ public class PictureComparer implements Comparer, LoggingInterface {
             .toList()
         );
 
-        // This takes a while (while running first, due to lack of indexing).
-        source.stream().filter(File::isDirectory)
-            .map(File::toPath)
-            .forEach(path-> {
-                try (Stream<Path> files = Files.list(path).parallel()){
-                    sourceFiles.addAll(
-                        files.map(Path::toFile)
-                        .filter(File::isFile)
-                        .filter(this::filePredicate)
-                        .toList()
-                    );
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-
         if (mode == Modes.RECURSIVE) {
             log("Recursive data search.");
             source.parallelStream()
@@ -182,22 +140,23 @@ public class PictureComparer implements Comparer, LoggingInterface {
             .map(File::toPath)
             .forEach(f -> {
                 try {
-                    Files.walkFileTree(f, new SimpleFileVisitor<>(){
-                        @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                            File fileAsFile = file.toFile();
-
-                            if (fileAsFile.isFile() && filePredicate(fileAsFile) && !sourceFiles.contains(fileAsFile)) {
-                                sourceFiles.add(fileAsFile);
-                            }
-
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
+                    Files.walkFileTree(f, fileVisitor);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             });
+        } else {
+            log("Non-recursive data search.");
+            source.parallelStream()
+                .filter(File::isDirectory)
+                .map(File::toPath)
+                .forEach(f -> {
+                    try {
+                        Files.walkFileTree(f, Collections.singleton(FileVisitOption.FOLLOW_LINKS), 0, fileVisitor);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
         }
 
 
@@ -211,8 +170,6 @@ public class PictureComparer implements Comparer, LoggingInterface {
         this.mode = Comparer.Modes.NOT_RECURSIVE;
         this.mappedObjects = null;
         this.duplicates = null;
-        // 0.5 - deprecated
-//        this.processedObjectCount = 0;
         this.sourceFiles = new ArrayList<>();
         this.destDirectory = null;
 
@@ -226,9 +183,6 @@ public class PictureComparer implements Comparer, LoggingInterface {
 
         Function<File, ImageRecord> createImageRecord = file -> {
             try {
-                // 0.5 deprecated.
-//                        processedObjectCount++;
-//                        log(String.format("Processed %d images from %d total", processedObjectCount, sourceFiles.size()));
                 return new ImageRecord(file);
             } catch (IOException ex) {
                 log(String.format("Skipping file: %s", file.getName()));
@@ -239,40 +193,25 @@ public class PictureComparer implements Comparer, LoggingInterface {
 
         log("Mapping files.");
 
-        // 0.5 - new
-        mappedObjects = //new ConcurrentHashMap<>();
-            sourceFiles.parallelStream()
+        mappedObjects = sourceFiles.parallelStream()
                 .map(createImageRecord)
                 .filter(Objects::nonNull) // Important!
                 .collect(Collectors.groupingBy(Record::getChecksum));
-
-        /*sourceFiles 0.5 - deprecated
-            .parallelStream()
-            .forEach(file -> {
-                try {
-                    ImageRecord ir = new ImageRecord(file);
-                    if(!map.containsKey(ir.getChecksum())) // calculating checksum
-                        map.put(ir.getChecksum(), new LinkedList<>());
-                    map.get(ir.getChecksum()).add(ir);
-                    super.processedObjectCount++;
-                    log(String.format("Processed %d images from %d total", processedObjectCount, totalObjectCount));
-                } catch (IOException e) {
-                    // skip that file
-                    log(String.format("Skipping file: %s", file.getName()));
-                    log(e, String.format("Skipping file: %s", file.getName()));
-                }
-            }
-        );*/
     }
 
     @Override
     public void compare() {
+        // This method will extract duplicates from mapped objects
+        // Will throw Null Pointer Exception in case of calling before map method.
+
+        if (mappedObjects == null)
+            throw new NullPointerException("Invalid call. Compare method called before map method.");
+
         log("Extracting duplicates");
 
-        // Queue of elements to remove.
-        Queue<ImageRecord> duplicates = new LinkedList<>();
+        // Collection of elements to remove.
+        List<ImageRecord> duplicates = new LinkedList<>();
 
-        // 0.5 - new
         mappedObjects.keySet()
             .forEach(k -> duplicates.addAll(
                 mappedObjects.entrySet().parallelStream()
@@ -283,14 +222,6 @@ public class PictureComparer implements Comparer, LoggingInterface {
                     .toList()
             ));
 
-        // 0.5 - deprecated
-        /*mappedObjects.forEach(
-            (k, v) -> {
-                for (int i = 0; i < v.size(); i++)
-                    if( i > 0 ) duplicates.add(v.get(i));
-            }
-        );*/
-
         this.duplicates = duplicates;
 
         log(String.format("Found %d duplicates from %d all images", duplicates.size(), sourceFiles.size()));
@@ -298,6 +229,15 @@ public class PictureComparer implements Comparer, LoggingInterface {
 
     @Override
     public void move() {
+        // This method will move any duplicates found by compare method.
+        // If you call it before compare method, Null Pointer Exception will be thrown.
+
+        if (duplicates == null)
+            throw new NullPointerException("Invalid call. Move method called before compare method.");
+
+        if (duplicates.isEmpty())
+            return;
+
         log("Moving duplicated images");
         String sep = File.separator;
 
@@ -315,29 +255,13 @@ public class PictureComparer implements Comparer, LoggingInterface {
                 throw new RuntimeException("Please refer to error.txt log file.");
             }
         });
-
-        // deprecated v0.5
-        /*super.duplicates
-            .parallelStream()
-            .forEach(
-                ir -> {
-                    File f = ir.getFile();
-                    try {
-                        Files.move(
-                            f.toPath(),
-                            Paths.get(destDirectory + separator + f.getName()),
-                            StandardCopyOption.REPLACE_EXISTING
-                        );
-                    } catch (IOException e) {
-                        log(e, e.getMessage());
-                        throw new RuntimeException("Please refer ti error.txt log file.");
-                    }
-                }
-            );*/
     }
 
     @Override
     public boolean filePredicate(File f) {
+        // This method will return boolean if the file is valid.
+        // Magic numbers for files formats.
+        // Listed at the beginning.
 
         try (FileInputStream is = new FileInputStream(f)) {
             byte[] header = new byte[longestHeaderLength];
@@ -362,5 +286,18 @@ public class PictureComparer implements Comparer, LoggingInterface {
         }
 
         return false;
+    }
+
+    private class FileVisitor extends SimpleFileVisitor<Path> {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            File fileAsFile = file.toFile();
+
+            if (fileAsFile.isFile() && filePredicate(fileAsFile) && !sourceFiles.contains(fileAsFile)) {
+                sourceFiles.add(fileAsFile);
+            }
+
+            return FileVisitResult.CONTINUE;
+        }
     }
 }
