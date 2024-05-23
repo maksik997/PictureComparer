@@ -152,7 +152,7 @@ public class PictureComparer implements Comparer, LoggingInterface {
                 .map(File::toPath)
                 .forEach(f -> {
                     try {
-                        Files.walkFileTree(f, Collections.singleton(FileVisitOption.FOLLOW_LINKS), 0, fileVisitor);
+                        Files.walkFileTree(f, Collections.singleton(FileVisitOption.FOLLOW_LINKS), 1, fileVisitor);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -167,7 +167,6 @@ public class PictureComparer implements Comparer, LoggingInterface {
     public void _reset() {
         log("Resetting Comparer.");
 
-        this.mode = Comparer.Modes.NOT_RECURSIVE;
         this.mappedObjects = null;
         this.duplicates = null;
         this.sourceFiles = new ArrayList<>();
