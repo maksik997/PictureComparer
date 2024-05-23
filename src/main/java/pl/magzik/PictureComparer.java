@@ -78,11 +78,11 @@ public class PictureComparer implements Comparer, LoggingInterface {
     }
 
     public int getTotalObjectCount() {
-        return sourceFiles.size();
+        return sourceFiles == null ? 0 : sourceFiles.size();
     }
 
     public int getDuplicatesObjectCount() {
-        return duplicates.size();
+        return duplicates == null ? 0 : duplicates.size();
     }
 
     public void setMode(Modes mode) {
