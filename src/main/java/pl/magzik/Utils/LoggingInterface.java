@@ -1,4 +1,4 @@
-package pl.magzik.Structures.Utils;
+package pl.magzik.Utils;
 
 import org.tinylog.Logger;
 

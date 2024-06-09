@@ -2,7 +2,7 @@ package pl.magzik;
 
 import pl.magzik.Structures.ImageRecord;
 import pl.magzik.Structures.Record;
-import pl.magzik.Structures.Utils.LoggingInterface;
+import pl.magzik.Utils.LoggingInterface;
 
 import java.io.File;
 import java.io.FileInputStream;
