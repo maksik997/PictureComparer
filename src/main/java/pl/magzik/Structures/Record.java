@@ -81,12 +81,20 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
         return c;
     }
 
-    public static <T> Map<Long, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFun) throws InterruptedException, IOException {
+    public static <T> Map<Long, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFun, Function<List<Record<T>>, List<Record<T>>>... processFunctions) throws InterruptedException, IOException {
         LoggingInterface.staticLog("Mapping input files.");
         Map<Long, List<Record<T>>> map;
 
         //try {
             map = filter(files, mapFun);
+
+            for (Function<List<Record<T>>, List<Record<T>>> function : processFunctions) {
+                map = map.values().parallelStream()
+                        .map(function)
+                        .flatMap(List::stream)
+                        .collect(Collectors.groupingBy(Record::getChecksum));
+            }
+
                     /*files.parallelStream()
                 .map(file -> virtualExecutor.submit(() -> mapFun.apply(file)))
                 .map(future -> {
@@ -138,5 +146,5 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
             e.printStackTrace(); // todo for now
             throw new RuntimeException(e);
         }
-    };
+    }
 }
