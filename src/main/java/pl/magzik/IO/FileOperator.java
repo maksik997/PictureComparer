@@ -11,7 +11,6 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Stream;
 
 public class FileOperator implements LoggingInterface {
     private Path destination;
@@ -41,6 +40,9 @@ public class FileOperator implements LoggingInterface {
     }
 
     public List<File> loadFiles(int depth, FilePredicate fp, Collection<File> source) throws IOException, InterruptedException, TimeoutException {
+        // This method will load files (either from file path or directory path (in depth directories)),
+        // then, a method will check if given files fulfil given FilePredicate.
+        // Due to recreating ExecutorService, I advise to use it for larger collections of files more rarely (to avoid any memory leaks etc.)
         log("Loading files from " + source);
 
         log("Validating files");
@@ -80,14 +82,14 @@ public class FileOperator implements LoggingInterface {
 
         log("Directory files collection.");
 
-        List<Future<File>> filesTasks = new LinkedList<>();
+        List<Future<File>> filesTasks = Collections.synchronizedList(new LinkedList<>());
 
-        source.stream()
+        source.parallelStream()
                 .filter(File::isDirectory)
                 .map(File::toPath)
                 .forEach(p -> {
                     try {
-                        Files.walkFileTree(p, EnumSet.noneOf(FileVisitOption.class), depth, new SimpleFileVisitor<>() {
+                        Files.walkFileTree(p, EnumSet.of(FileVisitOption.FOLLOW_LINKS), depth, new SimpleFileVisitor<>() {
                             @Override
                             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                                 if (Files.isRegularFile(file)) {
@@ -108,10 +110,12 @@ public class FileOperator implements LoggingInterface {
                     }
                 });
 
+        log("Waiting for files to be loaded.");
         virtualExecutor.shutdown();
-        // For now time for file searching is 10 minutes.
-        long timeout = 600;
-        if (!virtualExecutor.awaitTermination(timeout, TimeUnit.SECONDS)) {
+        // For now time for file searching is 60 minutes.
+        long timeout = 60;
+        if (!virtualExecutor.awaitTermination(timeout, TimeUnit.MINUTES)) {
+            log("Time exceeded, closing executor.");
             virtualExecutor.shutdownNow();
             if (!virtualExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
                 throw new TimeoutException("Executor couldn't end created threads.");
@@ -127,7 +131,7 @@ public class FileOperator implements LoggingInterface {
                     File f = future.get();
                     if (f != null) output.add(f);
                 } catch (ExecutionException e) {
-                    log(e, "Skipping file... Refer to error.txt");
+                    log(e, "Skipped file. Refer to error.txt...");
                 }
             }
         } catch (InterruptedException e) {
@@ -135,6 +139,7 @@ public class FileOperator implements LoggingInterface {
             throw new RuntimeException("Couldn't get files from future", e);
         }
 
+        log("File loading completed");
         return output;
     }
 

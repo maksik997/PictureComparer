@@ -25,7 +25,7 @@ public class ImageRecord extends Record<BufferedImage> {
     }
 
     @Override
-    public void calculateAndSetChecksum(BufferedImage e) {
+    protected void calculateAndSetChecksum(BufferedImage e) {
         String[] fileNameArr = super.getFile().getName().split("\\.");
         String extension = fileNameArr[fileNameArr.length-1];
 
