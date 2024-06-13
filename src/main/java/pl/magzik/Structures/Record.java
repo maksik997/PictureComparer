@@ -81,6 +81,7 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
         return c;
     }
 
+    @SafeVarargs
     public static <T> Map<Long, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFun, Function<List<Record<T>>, List<Record<T>>>... processFunctions) throws InterruptedException, IOException {
         LoggingInterface.staticLog("Mapping input files.");
         Map<Long, List<Record<T>>> map;
