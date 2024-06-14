@@ -82,14 +82,14 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
     }
 
     @SafeVarargs
-    public static <T> Map<Long, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFun, Function<List<Record<T>>, List<Record<T>>>... processFunctions) throws InterruptedException, IOException {
+    public static <T> Map<Long, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFun, Function<List<? extends Record<T>>, List<? extends Record<T>>>... processFunctions) throws InterruptedException, IOException {
         LoggingInterface.staticLog("Mapping input files.");
         Map<Long, List<Record<T>>> map;
 
         //try {
             map = filter(files, mapFun);
 
-            for (Function<List<Record<T>>, List<Record<T>>> function : processFunctions) {
+            for (Function<List<? extends Record<T>>, List<? extends Record<T>>> function : processFunctions) {
                 map = map.values().parallelStream()
                         .map(function)
                         .flatMap(List::stream)
