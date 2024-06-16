@@ -13,7 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
-public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterface {
+public abstract class Record<T> implements LoggingInterface {
 
     private static ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -24,7 +24,7 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
     private final File file;
 
     // Checksum of the content
-    private long checksum;
+    private final long checksum;
 
     private final String extension;
 
@@ -48,10 +48,6 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
         return checksum;
     }
 
-    public void setChecksum(long checksum) {
-        this.checksum = checksum;
-    }
-
     protected abstract long calculateAndSetChecksum(File e) throws IOException;
 
     @Override
@@ -72,13 +68,6 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
                 "file=" + file +
                 ", checksum=" + checksum +
                 '}';
-    }
-
-    @Override
-    public int compareTo(Record<T> o) { // Simple as that, for now q:
-        int c = Long.compare(checksum, o.checksum);
-        if (c == 0) return extension.compareTo(o.extension);
-        return c;
     }
 
     @SafeVarargs
@@ -140,6 +129,7 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
                         }
                     })
                     .filter(Objects::nonNull)
+                    .filter(ir -> ir.getChecksum() != 0L)
                     .collect(Collectors.groupingByConcurrent(Record::getChecksum)).entrySet()
                     .parallelStream().filter(e -> e.getValue().size() > 1)
                     .collect(Collectors.toConcurrentMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));

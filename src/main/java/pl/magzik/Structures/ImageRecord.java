@@ -1,5 +1,7 @@
 package pl.magzik.Structures;
 
+import pl.magzik.Algorithms.DCT;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -33,7 +35,20 @@ public class ImageRecord extends Record<BufferedImage> {
             g.drawImage(orgImage, 0, 0, w, h, null);
             g.dispose();
 
-            // DCT
+            // Fast DCT Lee
+            double[][] samples = new double[w][h];
+            for (int x = 0; x < w; x++) {
+                for (int y = 0; y < h; y++) {
+                    samples[x][y] = resizedImage.getRaster().getSample(x, y, 0);
+                }
+            }
+
+            double[][] quantDct = DCT.quantization(DCT.transform(samples));
+
+            double avg = Arrays.stream(quantDct).mapToDouble(a -> Arrays.stream(a).sum()).sum() / (quantDct.length + quantDct[0].length);
+
+
+            /*// DCT
             double[][] vals = new double[w][h];
             for (int x = 0; x < w; x++) {
                 for (int y = 0; y < h; y++) {
@@ -71,13 +86,13 @@ public class ImageRecord extends Record<BufferedImage> {
             double total = Arrays.stream(dctLowFreq)
                     .mapToDouble(arr -> Arrays.stream(arr).sum())
                     .sum();
-            double avg = total / (sw*sh);
+            double avg = total / (sw*sh);*/
 
             // Hash creation
             StringBuilder hash = new StringBuilder();
-            for (int x = 0; x < sw; x++) {
-                for (int y = 0; y < sh; y++) {
-                    if (dctLowFreq[x][y] > avg) hash.append("1");
+            for (double[] arr : quantDct) {
+                for (double vals : arr) {
+                    if (vals > avg) hash.append("1");
                     else hash.append("0");
                 }
             }
