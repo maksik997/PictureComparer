@@ -19,7 +19,7 @@ public class ImageFilePredicate implements FilePredicate {
         MAGIC_NUMBERS.put("ICO", List.of("00000100"));
         MAGIC_NUMBERS.put("JP2", List.of("0000000C6A5020200D0A870A"));
         MAGIC_NUMBERS.put("J2K", List.of("FF4FFF51"));
-        MAGIC_NUMBERS.put("JPCś", List.of("FF4FFF51"));
+        MAGIC_NUMBERS.put("JPC", List.of("FF4FFF51"));
     }
 
     // deprecated
@@ -44,6 +44,7 @@ public class ImageFilePredicate implements FilePredicate {
     public boolean test(File file) throws IOException {
         String ext = getExtension(file);
         if (!MAGIC_NUMBERS.containsKey(ext)) return false;
+
 
         try {
             return MAGIC_NUMBERS.entrySet().stream()
@@ -89,7 +90,7 @@ public class ImageFilePredicate implements FilePredicate {
 
     private static String getExtension(File file) {
         int idx = file.getName().lastIndexOf('.');
-        return idx == -1 ? "" : file.getName().substring(idx).toUpperCase();
+        return idx == -1 ? "" : file.getName().substring(idx+1).toUpperCase();
     }
 
     private static String getFileMagicNumber(File file, int bytesToRead) throws IOException {

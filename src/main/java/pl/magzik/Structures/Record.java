@@ -29,14 +29,14 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
     private final String extension;
 
 
-    public Record(File file) {
+    public Record(File file) throws IOException {
         this.file = file;
         this.extension = file.toPath().normalize().toString().substring(
             file.toPath().normalize().toString().lastIndexOf(".")+1
         );
-        this.checksum = this.hashCode();
+        this.checksum = calculateAndSetChecksum(file);
     }
-    public Record(Record<T> r){
+    public Record(Record<T> r) throws IOException {
         this(r.file);
     }
 
@@ -52,7 +52,7 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
         this.checksum = checksum;
     }
 
-    protected abstract void calculateAndSetChecksum(T e);
+    protected abstract long calculateAndSetChecksum(File e) throws IOException;
 
     @Override
     public boolean equals(Object o) {
@@ -82,12 +82,12 @@ public abstract class Record<T> implements Comparable<Record<T>>, LoggingInterfa
     }
 
     @SafeVarargs
-    public static <T> Map<Long, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFun, Function<List<? extends Record<T>>, List<? extends Record<T>>>... processFunctions) throws InterruptedException, IOException {
+    public static <T> Map<Long, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, List<? extends Record<T>>>... processFunctions) throws InterruptedException, IOException {
         LoggingInterface.staticLog("Mapping input files.");
         Map<Long, List<Record<T>>> map;
 
         //try {
-            map = filter(files, mapFun);
+            map = filter(files, mapFunction);
 
             for (Function<List<? extends Record<T>>, List<? extends Record<T>>> function : processFunctions) {
                 map = map.values().parallelStream()

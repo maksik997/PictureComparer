@@ -13,13 +13,13 @@ import java.util.List;
 
 public class ImageRecord extends Record<BufferedImage> {
 
-    public final static Function<List<ImageRecord>, List<ImageRecord>> pHashFunction = list -> {
+    public final static Function<List<? extends Record<BufferedImage>>, List<? extends Record<BufferedImage>>> pHashFunction = list -> {
         boolean[] ifTake = new boolean[list.size()];
         String[] hashes = new String[list.size()];
         int p = 0;
         int w = 64, h = 64;
 
-        for (ImageRecord imageRecord : list) {
+        for (Record<? extends BufferedImage> imageRecord : list) {
             // Resizing
             BufferedImage orgImage;
             try {
@@ -111,7 +111,7 @@ public class ImageRecord extends Record<BufferedImage> {
 
     public ImageRecord(File file) throws IOException {
         super(file);
-        calculateAndSetChecksum(ImageIO.read(file));
+//        calculateAndSetChecksum(ImageIO.read(file));
     }
 
     public ImageRecord(ImageRecord r) throws IOException {
@@ -126,21 +126,31 @@ public class ImageRecord extends Record<BufferedImage> {
     }
 
     @Override
-    protected void calculateAndSetChecksum(BufferedImage e) {
-        String[] fileNameArr = super.getFile().getName().split("\\.");
-        String extension = fileNameArr[fileNameArr.length-1];
+    protected long calculateAndSetChecksum(File f) throws IOException {
+        BufferedImage img = ImageIO.read(f);
+
+        int idx = f.getName().lastIndexOf('.');
+        String extension = f.getName().substring(idx+1);
+
+//        String[] fileNameArr = super.getFile().getName().split("\\.");
+//        String extension = fileNameArr[fileNameArr.length-1];
 
         try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream()) {
-            ImageIO.write(e, extension, byteStream);
+            ImageIO.write(img, extension, byteStream);
             Record.algorithm.update(byteStream.toByteArray());
         } catch (IOException ex) {
             // skip the file and set checksum = 0
-            System.out.println(ex.getMessage());
-            setChecksum(0L);
-            return;
+            log(ex, "Couldn't create checksum.");
+//            System.out.println(ex.getMessage());
+//            setChecksum(0L);
+            return 0L;
         }
 
-        super.setChecksum(Record.algorithm.getValue());
+//        super.setChecksum(Record.algorithm.getValue());
+        long v = Record.algorithm.getValue();
         Record.algorithm.reset();
+        return v;
     }
+
+
 }
