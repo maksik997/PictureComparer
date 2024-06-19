@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.CRC32;
 
 public abstract class Record<T> implements LoggingInterface {
@@ -34,7 +35,7 @@ public abstract class Record<T> implements LoggingInterface {
         this.extension = file.toPath().normalize().toString().substring(
             file.toPath().normalize().toString().lastIndexOf(".")+1
         );
-        this.checksum = calculateAndSetChecksum(file);
+        this.checksum = createChecksum(file);
     }
     public Record(Record<T> r) throws IOException {
         this(r.file);
@@ -48,7 +49,7 @@ public abstract class Record<T> implements LoggingInterface {
         return checksum;
     }
 
-    protected abstract long calculateAndSetChecksum(File e) throws IOException;
+    protected abstract long createChecksum(File e) throws IOException;
 
     @Override
     public boolean equals(Object o) {
@@ -71,19 +72,31 @@ public abstract class Record<T> implements LoggingInterface {
     }
 
     @SafeVarargs
-    public static <T> Map<Long, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, List<? extends Record<T>>>... processFunctions) throws InterruptedException, IOException {
+    public static <T> List<Record<T>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, Map<?, List<? extends Record<T>>>>... processFunctions) throws InterruptedException, IOException {
         LoggingInterface.staticLog("Mapping input files.");
-        Map<Long, List<Record<T>>> map;
+        Map<?, List<Record<T>>> map;
+        List<Record<T>> out = new ArrayList<>();
 
         //try {
             map = filter(files, mapFunction);
 
-            for (Function<List<? extends Record<T>>, List<? extends Record<T>>> function : processFunctions) {
-                map = map.values().parallelStream()
+//            Stream<? extends Record<T>> postFunction = Stream.empty();
+
+
+            for (Function<List<? extends Record<T>>, Map<?,List<? extends Record<T>>>> function : processFunctions) {
+                map.values().parallelStream()
+                        .map(function)
+                        .forEach(m -> {
+                            System.out.println(m.values().stream().flatMap(List::stream).toList());
+                            out.addAll(m.values().stream().flatMap(List::stream).toList());
+                        });
+
+                /*map = map.values().parallelStream()
                         .map(function)
                         .flatMap(List::stream)
-                        .collect(Collectors.groupingBy(Record::getChecksum));
+                        .collect(Collectors.groupingBy(Record::getChecksum));*/
             }
+
 
                     /*files.parallelStream()
                 .map(file -> virtualExecutor.submit(() -> mapFun.apply(file)))
@@ -102,7 +115,7 @@ public abstract class Record<T> implements LoggingInterface {
 
 
             LoggingInterface.staticLog("Finished mapping files.");
-            return map;
+            return out;
         /*} catch (RuntimeException e) {
             e.printStackTrace(); // todo for now
             throw new RuntimeException(e);

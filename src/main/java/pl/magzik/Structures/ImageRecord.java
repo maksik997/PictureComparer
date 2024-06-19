@@ -9,14 +9,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ImageRecord extends Record<BufferedImage> {
 
-    public final static Function<List<? extends Record<BufferedImage>>, List<? extends Record<BufferedImage>>> pHashFunction = list -> {
-        boolean[] ifTake = new boolean[list.size()];
+    public final static Function<List<? extends Record<BufferedImage>>, Map<? ,List<? extends Record<BufferedImage>>>> pHashFunction = list -> {
+        //boolean[] ifTake = new boolean[list.size()];
         String[] hashes = new String[list.size()];
         int p = 0;
         int w = 64, h = 64;
@@ -96,37 +99,89 @@ public class ImageRecord extends Record<BufferedImage> {
                     else hash.append("0");
                 }
             }
+            hashes[p++] = hash.toString();
 
-            hashes[p] = hash.toString();
-
-            if (p == 0) ifTake[p] = true;
-            else {
-                boolean failed = false;
-                for (int i = 0; i < p; i++) {
-                    String hash2 = hashes[i];
-                    int distance = 0;
-                    for (int j = 0; j < hash2.length(); j++) {
-                        if (hash2.charAt(j) != hash.charAt(j)) distance++;
+            /*if (Arrays.stream(hashes).noneMatch(Objects::isNull)) {
+                if (p == 0) ifTake[p] = true;
+                else {
+                    boolean failed = false;
+                    for (int i = 0; i < p; i++) {
+                        String hash2 = hashes[i];
+                        int distance = 0;
+                        for (int j = 0; j < hash2.length(); j++) {
+                            if (hash2.charAt(j) != hash.charAt(j)) distance++;
+                        }
+                        if (distance > 15) {
+                            ifTake[p] = false;
+                            failed = true;
+                            break;
+                        }
                     }
-                    if (distance > 15) {
-                        ifTake[p] = false;
-                        failed = true;
-                        break;
-                    }
+                    if (!failed) ifTake[p] = true;
                 }
-                if (!failed) ifTake[p] = true;
-            }
-            p++;
+                p++;
+            }*/
+
+            /*if (Arrays.stream(hashes).noneMatch(Objects::isNull)) {
+                System.out.println(Objects.equals(hashes[0], hashes[1]));
+
+                AtomicInteger i1 = new AtomicInteger(0);
+                list.stream()
+                        .collect(Collectors.groupingBy(l -> i1.getAndIncrement()))
+                        .values()
+                        .stream().filter(l -> l.size() > 1)
+                        .forEach(System.out::println);
+
+                if (p == 0) ifTake[p] = true;
+                else {
+                    boolean failed = false;
+                    for (int i = 0; i < p; i++) {
+                        String hash2 = hashes[i];
+                        int distance = 0;
+                        for (int j = 0; j < hash2.length(); j++) {
+                            if (hash2.charAt(j) != hash.charAt(j)) distance++;
+                        }
+                        if (distance > 15) {
+                            ifTake[p] = false;
+                            failed = true;
+                            break;
+                        }
+                    }
+                    if (!failed) ifTake[p] = true;
+                }
+                p++;
+            }*/
         }
 
+        if (Arrays.stream(hashes).anyMatch(Objects::isNull)) {
+//            System.out.println(list);
+//            System.out.println(Arrays.toString(hashes));
+            throw new NullPointerException("Some hashes are null.");
+        }
+
+
+        //System.out.println(Objects.equals(hashes[0], hashes[1]));
+
+        // todo fix this sh*t
+        AtomicInteger i1 = new AtomicInteger(0),
+                      i2 = new AtomicInteger(0);
+        return list.stream()
+                .collect(Collectors.groupingBy(l -> hashes[i1.getAndIncrement()]))
+                .values()
+                .stream().filter(l -> l.size() > 1)
+                .map(l -> l.subList(1, l.size()))
+                .collect(Collectors.toMap(l -> hashes[i2.getAndIncrement()], l -> l));
+
+
+
         // We take only duplicates, rest is good, I consider it todo for now
-        AtomicInteger itr = new AtomicInteger(0);
-        return list.stream().filter(e -> !ifTake[itr.getAndIncrement()]).toList();
+//        AtomicInteger itr = new AtomicInteger(0);
+//        return list.stream().filter(e -> !ifTake[itr.getAndIncrement()]).toList();
     };
 
     public ImageRecord(File file) throws IOException {
         super(file);
-//        calculateAndSetChecksum(ImageIO.read(file));
+//        createChecksum(ImageIO.read(file));
     }
 
     public ImageRecord(ImageRecord r) throws IOException {
@@ -141,7 +196,7 @@ public class ImageRecord extends Record<BufferedImage> {
     }
 
     @Override
-    protected long calculateAndSetChecksum(File f) throws IOException {
+    protected long createChecksum(File f) throws IOException {
         BufferedImage img = ImageIO.read(f);
 
         int idx = f.getName().lastIndexOf('.');
