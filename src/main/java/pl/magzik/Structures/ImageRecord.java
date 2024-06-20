@@ -12,7 +12,6 @@ import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +28,9 @@ public class ImageRecord extends Record<BufferedImage> {
         * Outputted collection should be then compared with some sequential algorithm.
         * However, to find similar images, this function is great.
         * Yay!!
+        * This Function can throw NullPointerException
+        * if a loaded image is null or if any of the created hashes is null.
+        * This Function can throw UncheckedIOException when IOException was thrown.
         */
         int w = 64, h = 64;
 
@@ -40,7 +42,7 @@ public class ImageRecord extends Record<BufferedImage> {
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-                if (image == null) throw new NullPointerException("Output image is null");
+                if (image == null) throw new NullPointerException("Loaded image is null. Probably unsupported file type.");
 
                 BufferedImage resized = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
                 Graphics2D g = resized.createGraphics();
@@ -83,61 +85,6 @@ public class ImageRecord extends Record<BufferedImage> {
                     Map.Entry::getKey,
                     Map.Entry::getValue
                 ));
-
-        /*for (Record<? extends BufferedImage> imageRecord : list) {
-            // Resizing
-            BufferedImage orgImage;
-            try {
-                orgImage = ImageIO.read(imageRecord.getFile());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            if (orgImage == null) throw new RuntimeException("Image not found");
-            BufferedImage resizedImage = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
-            Graphics2D g = resizedImage.createGraphics();
-            g.drawImage(orgImage, 0, 0, w, h, null);
-            g.dispose();
-
-            // Fast DCT Lee
-            double[][] samples = new double[w][h];
-            for (int x = 0; x < w; x++) {
-                for (int y = 0; y < h; y++) {
-                    samples[x][y] = resizedImage.getRaster().getSample(x, y, 0);
-                }
-            }
-
-            double[][] quantDct = DCT.quantization(DCT.transform(samples));
-
-            double avg = Arrays.stream(quantDct).mapToDouble(a -> Arrays.stream(a).sum()).sum() / (quantDct.length + quantDct[0].length);
-
-            // Hash creation
-            StringBuilder hash = new StringBuilder();
-            for (double[] arr : quantDct) {
-                for (double vals : arr) {
-                    if (vals > avg) hash.append("1");
-                    else hash.append("0");
-                }
-            }
-            hashes1[p++] = hash.toString();
-        }
-
-        if (Arrays.stream(hashes1).anyMatch(Objects::isNull))
-            throw new NullPointerException("Some hashes are null.");*/
-
-
-        /*// todo fix this sh*t
-        AtomicInteger i1 = new AtomicInteger(0),
-                      i2 = new AtomicInteger(0);
-        return list.stream()
-                .collect(Collectors.groupingBy(l -> hashes1[i1.getAndIncrement()]))
-                .values()
-                .stream().filter(l -> l.size() > 1)
-                .map(l -> l.subList(1, l.size()))
-                .collect(Collectors.toMap(l -> hashes1[i2.getAndIncrement()], l -> l));
-
-
-*/
-        // We take only duplicates, rest is good, I consider it todo for now
     };
 
     public ImageRecord(File file) throws IOException {

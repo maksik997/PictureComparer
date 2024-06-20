@@ -4,6 +4,7 @@ import pl.magzik.Utils.LoggingInterface;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -11,7 +12,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.CRC32;
 
 public abstract class Record<T> implements LoggingInterface {
@@ -72,70 +72,34 @@ public abstract class Record<T> implements LoggingInterface {
     }
 
     @SafeVarargs
-    public static <T> Map<?, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, Map<?, List<Record<T>>>>... processFunctions) throws InterruptedException, IOException {
+    public static <T> Map<?, List<Record<T>>> process(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, Map<?, List<Record<T>>>>... processFunctions) throws InterruptedException, IOException {
         LoggingInterface.staticLog("Mapping input files.");
         Map<?, List<Record<T>>> map;
-        List<Record<T>> out = new ArrayList<>();
 
-        //try {
-            map = filter(files, mapFunction);
+        map = filter(files, mapFunction);
 
-//            Stream<? extends Record<T>> postFunction = Stream.empty();
-
-
-            for (Function<List<? extends Record<T>>, Map<?,List<Record<T>>>> function : processFunctions) {
+        try {
+            for (Function<List<? extends Record<T>>, Map<?, List<Record<T>>>> function : processFunctions) {
                 map = map.values().parallelStream()
                     .map(function)
                     .flatMap(m -> m.entrySet().stream())
                     .collect(Collectors.toMap(
-                      Map.Entry::getKey,
-                      Map.Entry::getValue,
-                      (l1, l2) -> {
-                        List<Record<T>> l = new ArrayList<>(l1);
-                        l.addAll(l2);
-                        return l;
-                      }
-                ));
-
-
-
-               /* map.values().parallelStream()
-                        .map(function)
-                        .forEach(m -> {
-                            System.out.println(m.values().stream().flatMap(List::stream).toList());
-                            out.addAll(m.values().stream().flatMap(List::stream).toList());
-                        });*/
-
-
-                /*map = map.values().parallelStream()
-                        .map(function)
-                        .flatMap(List::stream)
-                        .collect(Collectors.groupingBy(Record::getChecksum));*/
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (l1, l2) -> {
+                            List<Record<T>> l = new ArrayList<>(l1);
+                            l.addAll(l2);
+                            return l;
+                        }
+                    ));
             }
+        } catch (UncheckedIOException ex) {
+            LoggingInterface.staticLog("Short circuit, stopping.");
+            throw ex.getCause();
+        }
 
-
-                    /*files.parallelStream()
-                .map(file -> virtualExecutor.submit(() -> mapFun.apply(file)))
-                .map(future -> {
-                    try {
-                        return future.get();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    } catch (ExecutionException e) { // This will happen most likely when checksum creating method will fail.
-                        LoggingInterface.staticLog(e, "Skipped files, couldn't create checksum.");
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.groupingByConcurrent(Record::getChecksum));*/
-
-
-            LoggingInterface.staticLog("Finished mapping files.");
-            return map;
-        /*} catch (RuntimeException e) {
-            e.printStackTrace(); // todo for now
-            throw new RuntimeException(e);
-        }*/
+        LoggingInterface.staticLog("Finished mapping files.");
+        return map;
     }
 
     private static <T> Map<Long, List<Record<T>>> filter(Collection<File> files, Function<File, ? extends Record<T>> checksumFunction) {
