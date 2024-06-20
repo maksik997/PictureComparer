@@ -72,7 +72,7 @@ public abstract class Record<T> implements LoggingInterface {
     }
 
     @SafeVarargs
-    public static <T> List<Record<T>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, Map<?, List<? extends Record<T>>>>... processFunctions) throws InterruptedException, IOException {
+    public static <T> Map<?, List<Record<T>>> analyze(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, Map<?, List<Record<T>>>>... processFunctions) throws InterruptedException, IOException {
         LoggingInterface.staticLog("Mapping input files.");
         Map<?, List<Record<T>>> map;
         List<Record<T>> out = new ArrayList<>();
@@ -83,13 +83,29 @@ public abstract class Record<T> implements LoggingInterface {
 //            Stream<? extends Record<T>> postFunction = Stream.empty();
 
 
-            for (Function<List<? extends Record<T>>, Map<?,List<? extends Record<T>>>> function : processFunctions) {
-                map.values().parallelStream()
+            for (Function<List<? extends Record<T>>, Map<?,List<Record<T>>>> function : processFunctions) {
+                map = map.values().parallelStream()
+                    .map(function)
+                    .flatMap(m -> m.entrySet().stream())
+                    .collect(Collectors.toMap(
+                      Map.Entry::getKey,
+                      Map.Entry::getValue,
+                      (l1, l2) -> {
+                        List<Record<T>> l = new ArrayList<>(l1);
+                        l.addAll(l2);
+                        return l;
+                      }
+                ));
+
+
+
+               /* map.values().parallelStream()
                         .map(function)
                         .forEach(m -> {
                             System.out.println(m.values().stream().flatMap(List::stream).toList());
                             out.addAll(m.values().stream().flatMap(List::stream).toList());
-                        });
+                        });*/
+
 
                 /*map = map.values().parallelStream()
                         .map(function)
@@ -115,7 +131,7 @@ public abstract class Record<T> implements LoggingInterface {
 
 
             LoggingInterface.staticLog("Finished mapping files.");
-            return out;
+            return map;
         /*} catch (RuntimeException e) {
             e.printStackTrace(); // todo for now
             throw new RuntimeException(e);
