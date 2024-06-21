@@ -9,11 +9,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
+import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -36,13 +36,13 @@ public class ImageRecord extends Record<BufferedImage> {
 
         List<String> hashes = list.stream()
             .map(record -> { // Resizing to w, h
-                BufferedImage image;
-                try {
+                BufferedImage image = loadImage(record.getFile());
+                /*try {
                     image = ImageIO.read(record.getFile());
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
-                }
-                if (image == null) throw new NullPointerException("Loaded image is null. Probably unsupported file type.");
+                }*/
+                //if (image == null) throw new NullPointerException("Loaded image is null. Probably unsupported file type.");
 
                 BufferedImage resized = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
                 Graphics2D g = resized.createGraphics();
@@ -85,6 +85,44 @@ public class ImageRecord extends Record<BufferedImage> {
                     Map.Entry::getKey,
                     Map.Entry::getValue
                 ));
+    },
+    pixelByPixelFunction = list -> {
+        Set<Record<BufferedImage>> processed = new CopyOnWriteArraySet<>();
+
+        return list.parallelStream()
+            .filter(r1 -> !processed.contains(r1))
+            .peek(processed::add)
+            .collect(Collectors.toConcurrentMap(
+               r1 -> r1,
+               r1 -> {
+                   BufferedImage image = loadImage(r1.getFile());
+                   return list.stream()
+                       .filter(r2 -> r1 != r2 && !processed.contains(r2) && compareImages(image, loadImage(r2.getFile())))
+                       .peek(processed::add)
+                       .map(r2 -> (Record<BufferedImage>) r2)
+                       .toList();
+               }
+            ));
+
+        /*Map<Record<BufferedImage>, List<Record<BufferedImage>>> map = new HashMap<>();
+
+        list.forEach(r1 -> {
+                BufferedImage img1 = loadImage(r1.getFile());
+
+                List<Record<BufferedImage>> duplicates = list.stream()
+                    .filter(r2 -> {
+                        BufferedImage img2 = loadImage(r2.getFile());
+
+                        return img1 != img2 && compareImages(img1, img2);
+                    })
+                    .map(r -> (Record<BufferedImage>) r)
+                    .toList();
+
+                if (duplicates.stream().noneMatch(map::containsKey))
+                    map.put(r1, duplicates);
+            });
+
+        return map;*/
     };
 
     public ImageRecord(File file) throws IOException {
@@ -122,5 +160,26 @@ public class ImageRecord extends Record<BufferedImage> {
         return v;
     }
 
+    private static BufferedImage loadImage(File file) {
+        BufferedImage img;
+        try {
+            img = ImageIO.read(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
 
+        if (img == null) throw new NullPointerException("Loaded image is null. Probably unsupported file type.");
+        return img;
+    }
+
+    private static boolean compareImages(BufferedImage img1, BufferedImage img2) {
+        if (img1.getWidth() != img2.getWidth() || img1.getHeight() != img2.getHeight()) return false;
+
+        return IntStream.range(0, img1.getWidth()*img1.getHeight())
+                .allMatch(idx -> {
+                   int x = idx % img1.getWidth(),
+                    y = idx / img1.getWidth();
+                    return img1.getRGB(x,y) == img2.getRGB(x,y);
+                });
+    }
 }

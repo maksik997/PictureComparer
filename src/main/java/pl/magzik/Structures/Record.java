@@ -22,7 +22,7 @@ public abstract class Record<T> implements LoggingInterface {
     protected final static CRC32 algorithm = new CRC32();
 
     // File Reference
-    private final File file;
+    protected final File file;
 
     // Checksum of the content
     private final long checksum;
@@ -83,6 +83,7 @@ public abstract class Record<T> implements LoggingInterface {
                 map = map.values().parallelStream()
                     .map(function)
                     .flatMap(m -> m.entrySet().stream())
+                    .filter(e -> e.getValue().size() > 1)
                     .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
