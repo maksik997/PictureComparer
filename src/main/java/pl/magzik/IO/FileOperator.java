@@ -13,27 +13,10 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class FileOperator implements LoggingInterface {
-    private Path destination;
 
     private ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
-    public FileOperator() {
-        this(Path.of(System.getProperty("user.home"), "Documents"));
-    }
-
-    public FileOperator(Path destination) {
-        log("Created FileOperator.");
-        this.destination = destination;
-    }
-
-    public Path getDestination() {
-        return destination;
-    }
-
-    public void setDestination(Path destination) {
-        log("Changed directory to " + destination);
-        this.destination = destination;
-    }
+    public FileOperator() {}
 
     public List<File> loadFiles(int depth, FilePredicate fp, File... source) throws IOException, InterruptedException, TimeoutException {
         return loadFiles(depth, fp, Arrays.asList(source));
@@ -46,7 +29,6 @@ public class FileOperator implements LoggingInterface {
         log("Loading files from " + source);
 
         log("Validating files");
-        Objects.requireNonNull(destination, "Destination is null");
         Objects.requireNonNull(source, "Depth is null");
 
         try {
@@ -91,7 +73,7 @@ public class FileOperator implements LoggingInterface {
                     try {
                         Files.walkFileTree(p, EnumSet.of(FileVisitOption.FOLLOW_LINKS), depth, new SimpleFileVisitor<>() {
                             @Override
-                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                                 if (Files.isRegularFile(file)) {
                                     filesTasks.add(virtualExecutor.submit(() -> processPath(fp, file, output)));
                                 }
@@ -100,7 +82,7 @@ public class FileOperator implements LoggingInterface {
                             }
 
                             @Override
-                            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                            public FileVisitResult visitFileFailed(Path file, IOException exc) {
                                 log("Skipping " + file + " because " + exc);
                                 return FileVisitResult.CONTINUE;
                             }
@@ -147,6 +129,5 @@ public class FileOperator implements LoggingInterface {
         File f = p.toFile();
         if (f.isFile() && fp.test(f) && !output.contains(f)) return f;
         return null;
-
     }
 }

@@ -16,16 +16,6 @@ public interface LoggingInterface {
         Logger.error(ex);
     }
 
-    default <E extends Exception> void logAndThrow(E ex, String msg) throws E {
-        log(ex, msg);
-        throw ex;
-    }
-
-    default <E extends RuntimeException> void logAndThrow(E ex, String msg) {
-        log(ex, msg);
-        throw ex;
-    }
-
     static void staticLog(String msg) {
         Logger.info(msg);
     }

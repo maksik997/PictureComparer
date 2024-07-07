@@ -16,7 +16,7 @@ import java.util.zip.CRC32;
 
 public abstract class Record<T> implements LoggingInterface {
 
-    private static ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
+    private static final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     // Algorithm to calculate checksum
     protected final static CRC32 algorithm = new CRC32();
@@ -72,11 +72,11 @@ public abstract class Record<T> implements LoggingInterface {
     }
 
     @SafeVarargs
-    public static <T> Map<?, List<Record<T>>> process(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, Map<?, List<Record<T>>>>... processFunctions) throws InterruptedException, IOException {
+    public static <T> Map<?, List<Record<T>>> process(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, Map<?, List<Record<T>>>>... processFunctions) throws IOException, ExecutionException {
         LoggingInterface.staticLog("Mapping input files.");
         Map<?, List<Record<T>>> map;
 
-        map = filter(files, mapFunction);
+        map = groupByChecksum(files, mapFunction);
 
         try {
             for (Function<List<? extends Record<T>>, Map<?, List<Record<T>>>> function : processFunctions) {
@@ -103,8 +103,8 @@ public abstract class Record<T> implements LoggingInterface {
         return map;
     }
 
-    private static <T> Map<Long, List<Record<T>>> filter(Collection<File> files, Function<File, ? extends Record<T>> checksumFunction) {
-        // The First step will filter images using meta-data then checksum
+    private static <T> Map<Long, List<Record<T>>> groupByChecksum(Collection<File> files, Function<File, ? extends Record<T>> checksumFunction) throws ExecutionException {
+        // The First step will groupByChecksum images using meta-data then checksum
         try {
             return files.parallelStream()
                     .map(File::toPath)
@@ -128,8 +128,8 @@ public abstract class Record<T> implements LoggingInterface {
                     .parallelStream().filter(e -> e.getValue().size() > 1)
                     .collect(Collectors.toConcurrentMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));
         } catch (RuntimeException e) {
-            e.printStackTrace(); // todo for now
-            throw new RuntimeException(e);
+            LoggingInterface.staticLog("Error while grouping...");
+            throw new ExecutionException(e);
         }
     }
 }

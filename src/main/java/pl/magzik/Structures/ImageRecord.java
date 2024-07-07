@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -37,12 +36,6 @@ public class ImageRecord extends Record<BufferedImage> {
         List<String> hashes = list.stream()
             .map(record -> { // Resizing to w, h
                 BufferedImage image = loadImage(record.getFile());
-                /*try {
-                    image = ImageIO.read(record.getFile());
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }*/
-                //if (image == null) throw new NullPointerException("Loaded image is null. Probably unsupported file type.");
 
                 BufferedImage resized = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
                 Graphics2D g = resized.createGraphics();
@@ -103,26 +96,6 @@ public class ImageRecord extends Record<BufferedImage> {
                        .toList();
                }
             ));
-
-        /*Map<Record<BufferedImage>, List<Record<BufferedImage>>> map = new HashMap<>();
-
-        list.forEach(r1 -> {
-                BufferedImage img1 = loadImage(r1.getFile());
-
-                List<Record<BufferedImage>> duplicates = list.stream()
-                    .filter(r2 -> {
-                        BufferedImage img2 = loadImage(r2.getFile());
-
-                        return img1 != img2 && compareImages(img1, img2);
-                    })
-                    .map(r -> (Record<BufferedImage>) r)
-                    .toList();
-
-                if (duplicates.stream().noneMatch(map::containsKey))
-                    map.put(r1, duplicates);
-            });
-
-        return map;*/
     };
 
     public ImageRecord(File file) throws IOException {
