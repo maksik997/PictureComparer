@@ -14,15 +14,15 @@ import java.util.function.Function;
 
 public class FTest {
     public static void main(String[] args) throws IOException, InterruptedException, TimeoutException, ExecutionException {
-        long s = System.currentTimeMillis(), m = 0;
         FileOperator fo = new FileOperator();
 
         File[] files = {
-            new File("D:\\Data\\_Photos"),
-            //new File("C:\\Users\\maksy"),
-            //new File("./src/test/java/")
+                /*
+                * Directories to check files for
+                */
         };
 
+        // Simple function that creates ImageRecords (groupByFunction)
         Function<File, ImageRecord> createImageRecord = file -> {
             try {
                 return new ImageRecord(file);
@@ -37,13 +37,10 @@ public class FTest {
 
         System.out.println(f);
         System.out.println("Found: "+ f.size());
-        System.out.println((System.currentTimeMillis() - s) + " ms time.");
-        m = System.currentTimeMillis();
 
         System.out.println("Record.process output: ");
         System.out.println(Record.process(f, createImageRecord, ImageRecord.pHashFunction, ImageRecord.pixelByPixelFunction));
-
-        System.out.println((System.currentTimeMillis() - m) + " ms time.");
+        // And here ImageRecord.[name] represents built-in functions to use.
 
     }
 }
