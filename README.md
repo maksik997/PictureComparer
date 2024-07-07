@@ -1,46 +1,69 @@
-Author: [Github](https://github.com/maksik997)
-
+Author: [GitHub](https://github.com/maksik997)
 # WARNING!
-The library is not tested on a large scale, so be warned about that.
-Largest test date size: 19 GB (about 16 628 different files).
+Largest test date size: (about 40 000 different files).
+The library could not delete all duplicates, but surely it will extract all pixel-to-pixel images.
+It Could be used to find similar pictures.
 
 ## Information:
-- Please report any bugs on my Github
-- In case you want to use setMode method, instead of using _setUp overload, then you should use setMode method before invoking _setUp method.
+- Please report any bugs :)
+- If you have any idea (after all, you're reading this) please let me know. I could use some nice ideas to enhance this library.
 
-# Usage of library for version `0.3` or later:
-It's straightforward. Only what you need to do is:
-1. Prepare yourself **destination directory** *(where files will be moved if they're duplicates)*, **source directory** or **list of files** *(files/directory that you want to compare files in)*,
-2. Create `PictureComparer` object *(with either blank constructor or with your destination and source files/directory that you prepared in a previous step)*,
-3. If you have used **blank** constructor you should now use `_setUp(<source files/directory>, <destination directory>)`.
-4. Then you have to use three different methods. Firstly you would use `map()` method, this method will load all files prepare checksums etc., next you would use `compare()`, this method will note all duplicated files. And finally `move()` method that will move all duplicates to destination folder that you specified.
-5. And lastly in case you would want to re-use this object, you can call `_reset()` method, that will clear a whole object. *(After resetting an object you should then call `_setUp(<source files/directory>, <destination directory>)` method)*
-### Note:
-* Files extensions supported: all that are supported by `ImageIO` class.
-* App was tested on Windows 11.
-* Jdk version: 19
-### Code snippet:
+# Functions: 
+The library shares some packages: Algorithms, Comparator, IO, Structures, and Utils.
+- **Algorithms**: 
+Simple implementation of Fast DCT Lee algorithm (nothing to be expected here),
+  also powered by ChatGPT (as short-cut for any other implementation).
+Also with quantization method (using JPEG quantization table).
+- **Comparator**: Two classes for File Predicate, with implementation for images. It uses magic numbers as it was in previous versions. Functional interface shares test method which return boolean and take File and could throw IOException. So it can be used in case someone would want to create something themselves.
+- **IO**: FileOperator class which can load images efficiently (using new Java's virtual threads). Method takes depth (used by FileVisitor), FilePredicate to ensure that we take only valid files and collection/array of File objects.
+- **Structures**: Classes for Records. Represents image with an added checksum. Shares process, groupByChecksum methods (Process for processing grouped by checksum data and groupByChecksum for grouping by checksum). And ImageRecord, which shares two public static fields, that are Function objects that allows using Record's process function to process a given image collection.
+- **Utils**:Logging interface for Tinylog with tinylog.properties settings.
+
+# Description:
+This library was created to fulfill my own ambition to create my image comparing app into two parts.
+You can edit anything there, create your own function that returns this monstrosity...
+Or even enhance it.
+I don't know why anyone would want to do this, but anyway, I had a great time creating it.
+The library works in a way that satisfies me.
+Please ask if you have any questions.
+
+# Usage of a library version 0.5 or grater:
+Simple code that describes usage:
 ```java
-// Creating my source files
-List<File> files = new ArrayList<>();
-files.add(new File("{file1}"));
-files.add(new File("{file2}"));
-files.add(new File("{file3}"));
-files.add(new File("{file4}"));
-files.add(new File("{file5}"));
-// I could also use 
-// File source = new File("{sourceDir}");
-// Creating my destination directory
-File destination = new File("{destDir}");
-// Creating a Picture Comparer object
-PictureComparer pc = new PictureComparer(destinantion, files);
-// I could also use
-// PictureComparer pc = new PictureComparer();
-// pc._setUp(destinantion, files);
-// Usage
-pc.map();
-pc.compare();
-pc.move();
-// Resetting object
-pc._reset();
+public static void main(String[] args) throws IOException, InterruptedException, TimeoutException, ExecutionException {
+        FileOperator fo = new FileOperator();
+
+        File[] files = {
+            /*
+            * Directories to check files for 
+            */
+        };
+        
+        // Simple function that creates ImageRecords (groupByFunction)
+        Function<File, ImageRecord> createImageRecord = file -> {
+            try {
+                return new ImageRecord(file);
+            } catch (IOException ex) {
+                LoggingInterface.staticLog(String.format("Skipping file: %s", file.getName()));
+                LoggingInterface.staticLog(ex, String.format("Skipping file: %s", file.getName()));
+            }
+            return null;
+        };
+
+        List<File> f = fo.loadFiles(Integer.MAX_VALUE, new ImageFilePredicate(), files);
+
+        System.out.println(f);
+        System.out.println("Found: "+ f.size());
+        
+        System.out.println("Record.process output: ");
+        System.out.println(Record.process(f, createImageRecord, ImageRecord.pHashFunction, ImageRecord.pixelByPixelFunction));
+        // And here ImageRecord.[name] represents built-in functions to use. 
+        
+    }
 ```
+
+### Note:
+* App uses Tinylog as a logging service, and uses TwelveMonkeys as ImageIO enhancement.
+* Files extensions supported: all that are supported by `ImageIO` class and all that are supported by: `TwelveMonkeys` (used packages: `bmp`, `tiff`, `jpeg`, `core`).
+* The library was tested on Windows 11.
+* Jdk version: **22**
