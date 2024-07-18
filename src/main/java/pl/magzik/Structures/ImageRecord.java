@@ -84,21 +84,25 @@ public class ImageRecord extends Record<BufferedImage> {
 
                 // Here not a parallel stream is needed !!!
                 return list.stream()
-                        .filter(r1 -> !processed.contains(r1))
-                        .peek(processed::add)
-                        .collect(Collectors.toConcurrentMap(
-                                r1 -> r1,
-                                r1 -> {
-                                    BufferedImage image = loadImage(r1.getFile());
-                                    return list.stream()
-                                        .filter(r2 -> r1 != r2)
-                                        .filter(r2 -> !processed.contains(r2))
-                                        .filter(r2 -> compareImages(image, loadImage(r2.getFile())))
-                                        .peek(processed::add)
-                                        .map(r2 -> (Record<BufferedImage>) r2)
-                                        .toList();
-                                }
-                        ));
+                    .filter(r1 -> !processed.contains(r1))
+                    .peek(processed::add)
+                    .collect(Collectors.toConcurrentMap(
+                        r1 -> r1,
+                        r1 -> {
+                            BufferedImage image = loadImage(r1.getFile());
+
+                            var newList = new ArrayList<Record<BufferedImage>>(list.stream()
+                                    .filter(r2 -> r1 != r2)
+                                    .filter(r2 -> !processed.contains(r2))
+                                    .filter(r2 -> compareImages(image, loadImage(r2.getFile())))
+                                    .peek(processed::add)
+                                    .map(r2 -> (Record<BufferedImage>) r2)
+                                    .toList());
+
+                            newList.add(r1);
+                            return newList;
+                        }
+                    ));
             };
 
     public ImageRecord(File file) throws IOException {
