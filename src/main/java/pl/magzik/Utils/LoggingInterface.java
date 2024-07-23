@@ -9,7 +9,7 @@ public interface LoggingInterface {
     }
 
     default void log(Exception ex, String msg) {
-        Logger.error(ex, msg);
+        Logger.error(ex, msg +  " Please refer to error.txt file.");
     }
 
     default void log(Exception ex) {
