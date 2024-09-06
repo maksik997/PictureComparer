@@ -46,6 +46,7 @@ public class Quantifier {
      */
     public double[][] quantize(double[][] coeffs) {
         int m = coeffs.length, n = coeffs[0].length;
+
         if (m != quantizationMatrix.length || n != quantizationMatrix[0].length) {
             throw new IllegalArgumentException("Coefficient matrix and quantization matrix dimensions must match");
         }

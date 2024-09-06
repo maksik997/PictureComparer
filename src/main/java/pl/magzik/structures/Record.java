@@ -17,29 +17,21 @@ import java.util.zip.CRC32;
 
 public abstract class Record<T> implements LoggingInterface {
 
+    @Deprecated
     private static final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
-    // Algorithm to calculate checksum
-    @Deprecated
-    protected final static CRC32 algorithm = new CRC32();
-
-    // File Reference
     protected final File file;
-
-    // Checksum of the content
     private final long checksum;
-
     private final String extension;
 
 
     public Record(File file) throws IOException {
         Objects.requireNonNull(file, "File cannot be null");
         this.file = file;
-        this.extension = file.toPath().normalize().toString().substring(
-            file.toPath().normalize().toString().lastIndexOf(".")+1
-        );
+        this.extension = getExtension(file);
         this.checksum = createChecksum(file);
     }
+
     public Record(Record<T> r) throws IOException {
         this(r.file);
     }
@@ -53,6 +45,17 @@ public abstract class Record<T> implements LoggingInterface {
     }
 
     protected abstract long createChecksum(File e) throws IOException;
+
+    /**
+     * Retrieves the file extension based on the file's name.
+     *
+     * @param f the file from which to retrieve the extension
+     * @return the file extension (without the dot) or an empty string if the extension is not found
+     */
+    protected String getExtension(File f) {
+        int idx = f.getName().lastIndexOf('.');
+        return idx == -1 ? "" : f.getName().substring(idx + 1);
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -75,6 +78,7 @@ public abstract class Record<T> implements LoggingInterface {
     }
 
     @SafeVarargs
+    @Deprecated
     public static <T, R extends Record<T>> Map<?, List<R>> process(Collection<File> files, Function<File, R> mapFunction, Algorithm<?, R>... processFunctions) throws IOException, ExecutionException {
         LoggingInterface.staticLog("Mapping input files.");
         Map<?, List<R>> map;
@@ -105,6 +109,7 @@ public abstract class Record<T> implements LoggingInterface {
         return map;
     }
 
+    @Deprecated
     private static <T, R extends Record<T>> Map<Long, List<R>> groupByChecksum(Collection<File> files, Function<File, R> checksumFunction) throws ExecutionException {
         // The First step will groupByChecksum images using meta-data then checksum
         try {

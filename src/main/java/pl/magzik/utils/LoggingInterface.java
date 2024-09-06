@@ -10,27 +10,16 @@ public interface LoggingInterface {
     /**
      * Saves log message.
      * @param msg
-     *        Exact message to be printed in log.
+     *        Exact message to be printed in the log.
      */
     default void log(String msg) {
         Logger.info(msg);
     }
 
     /**
-     * Saves log message with exception.
-     * @param msg
-     *        Exact message to be printed in log.
+     * Saves a log message with exception.
      * @param ex
-     *        Exception to be printed in log.
-     */
-    default void log(Exception ex, String msg) {
-        Logger.error(ex, msg +  " Please refer to error.txt file.");
-    }
-
-    /**
-     * Saves log message with exception.
-     * @param ex
-     *        Exception to be printed in log.
+     *        Exception to be printed in the log.
      */
     default void log(Exception ex) {
         Logger.error(ex.getLocalizedMessage(), ex);
@@ -39,9 +28,9 @@ public interface LoggingInterface {
     /**
      * Static method.
      * <p>
-     * Saves log message with exception.
+     * Saves a log message with exception.
      * @param msg
-     *        Exact message to be printed in log.
+     *        Exact message to be printed in the log.
      */
     @Deprecated
     static void staticLog(String msg) {
@@ -51,11 +40,11 @@ public interface LoggingInterface {
     /**
      * Static method.
      * <p>
-     * Saves log message with exception.
+     * Saves a log message with exception.
      * @param msg
-     *        Exact message to be printed in log.
+     *        Exact message to be printed in the log.
      * @param ex
-     *        Exception to be printed in log.
+     *        Exception to be printed in the log.
      */
     @Deprecated
     static void staticLog(Exception ex, String msg) {

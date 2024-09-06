@@ -69,16 +69,7 @@ public class ImageRecord extends Record<BufferedImage> {
         }
     }
 
-    /**
-     * Retrieves the file extension based on the file's name.
-     *
-     * @param f the file from which to retrieve the extension
-     * @return the file extension (without the dot) or an empty string if the extension is not found
-     */
-    private String getExtension(File f) {
-        int idx = f.getName().lastIndexOf('.');
-        return idx == -1 ? "" : f.getName().substring(idx + 1);
-    }
+
 
     /**
      * Creates a new {@link ImageRecord} object based on the given file.

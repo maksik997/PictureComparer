@@ -8,7 +8,6 @@ import java.awt.image.Raster;
 import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Implementation of the {@link Algorithm} interface that compares images pixel-by-pixel.

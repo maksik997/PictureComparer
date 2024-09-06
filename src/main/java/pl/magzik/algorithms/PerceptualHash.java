@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
  */
 public class PerceptualHash implements Algorithm<String, ImageRecord> {
 
-    private static final int WIDTH = 64, HEIGHT = 64;
+    private static final int WIDTH = 8, HEIGHT = 8;
 
     @Override
     public Map<String, List<ImageRecord>> apply(List<ImageRecord> group) {
