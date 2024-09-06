@@ -50,7 +50,7 @@ public class ImageRecord extends Record<BufferedImage> {
                             samples[x][y] = img.getRaster().getSampleDouble(x, y, 0);
                     return samples;
                 })
-                .map(samples -> DCT.quantization(DCT.transform(samples))) // Fast DCT Lee algorithm
+                .map(samples -> DCT.apply(samples) /*DCT.quantization(DCT.transform(samples))*/) // Fast DCT Lee algorithm
                 .map(dct -> {
                     double avg = Arrays.stream(dct).mapToDouble(a -> Arrays.stream(a).sum()).sum()
                             / (dct.length + dct[0].length);

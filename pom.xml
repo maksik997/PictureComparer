@@ -45,6 +45,12 @@
             <artifactId>imageio-core</artifactId>
             <version>3.11.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.wendykierp</groupId>
+            <artifactId>JTransforms</artifactId>
+            <version>3.1</version>
+            <classifier>with-dependencies</classifier>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
