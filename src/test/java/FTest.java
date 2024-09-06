@@ -1,4 +1,4 @@
-import pl.magzik.comparator.ImageFilePredicate;
+import pl.magzik.predicates.ImageFilePredicate;
 import pl.magzik.io.FileOperator;
 import pl.magzik.structures.ImageRecord;
 import pl.magzik.utils.LoggingInterface;
