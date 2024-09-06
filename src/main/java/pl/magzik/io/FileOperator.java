@@ -1,6 +1,6 @@
 package pl.magzik.io;
 
-import pl.magzik.comparator.FilePredicate;
+import pl.magzik.predicates.FilePredicate;
 import pl.magzik.utils.LoggingInterface;
 
 import java.io.File;
