@@ -1,4 +1,4 @@
-package pl.magzik.algorithms.dct;
+package pl.magzik.algorithms.math.dct;
 
 /**
  * Represents a quantization process used in image processing, typically for JPEG compression.
@@ -37,7 +37,7 @@ public class Quantifier {
     }
 
     /**
-     * Quantizes the given matrix of DCT coefficients using the quantization matrix.
+     * Quantiles the given matrix of DCT coefficients using the quantization matrix.
      *
      * @param coeffs the matrix of DCT coefficients to quantize
      * @return the quantized matrix

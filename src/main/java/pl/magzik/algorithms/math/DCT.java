@@ -1,7 +1,7 @@
-package pl.magzik.algorithms;
+package pl.magzik.algorithms.math;
 
-import pl.magzik.algorithms.dct.Quantifier;
-import pl.magzik.algorithms.dct.Transformer;
+import pl.magzik.algorithms.math.dct.Quantifier;
+import pl.magzik.algorithms.math.dct.Transformer;
 
 /**
  * Provides a pipeline for applying Discrete Cosine Transform (DCT) and quantization

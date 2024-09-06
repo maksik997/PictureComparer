@@ -1,5 +1,6 @@
 package pl.magzik.structures;
 
+import pl.magzik.algorithms.Algorithm;
 import pl.magzik.utils.LoggingInterface;
 
 import java.io.File;
@@ -19,6 +20,7 @@ public abstract class Record<T> implements LoggingInterface {
     private static final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     // Algorithm to calculate checksum
+    @Deprecated
     protected final static CRC32 algorithm = new CRC32();
 
     // File Reference
@@ -31,6 +33,7 @@ public abstract class Record<T> implements LoggingInterface {
 
 
     public Record(File file) throws IOException {
+        Objects.requireNonNull(file, "File cannot be null");
         this.file = file;
         this.extension = file.toPath().normalize().toString().substring(
             file.toPath().normalize().toString().lastIndexOf(".")+1
@@ -72,23 +75,22 @@ public abstract class Record<T> implements LoggingInterface {
     }
 
     @SafeVarargs
-    public static <T> Map<?, List<Record<T>>> process(Collection<File> files, Function<File, ? extends Record<T>> mapFunction, Function<List<? extends Record<T>>, Map<?, List<Record<T>>>>... processFunctions) throws IOException, ExecutionException {
+    public static <T, R extends Record<T>> Map<?, List<R>> process(Collection<File> files, Function<File, R> mapFunction, Algorithm<?, R>... processFunctions) throws IOException, ExecutionException {
         LoggingInterface.staticLog("Mapping input files.");
-        Map<?, List<Record<T>>> map;
-
-        map = groupByChecksum(files, mapFunction);
+        Map<?, List<R>> map;
 
         try {
-            for (Function<List<? extends Record<T>>, Map<?, List<Record<T>>>> function : processFunctions) {
+            map = groupByChecksum(files, mapFunction);
+            for (var function : processFunctions) {
                 map = map.values().parallelStream()
-                    .map(function)
+                    .map(function::apply)
                     .flatMap(m -> m.entrySet().stream())
                     .filter(e -> e.getValue().size() > 1)
                     .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
+                        r -> r.getKey(),
+                        r -> r.getValue(),
                         (l1, l2) -> {
-                            List<Record<T>> l = new ArrayList<>(l1);
+                            List<R> l = new ArrayList<>(l1);
                             l.addAll(l2);
                             return l;
                         }
@@ -103,7 +105,7 @@ public abstract class Record<T> implements LoggingInterface {
         return map;
     }
 
-    private static <T> Map<Long, List<Record<T>>> groupByChecksum(Collection<File> files, Function<File, ? extends Record<T>> checksumFunction) throws ExecutionException {
+    private static <T, R extends Record<T>> Map<Long, List<R>> groupByChecksum(Collection<File> files, Function<File, R> checksumFunction) throws ExecutionException {
         // The First step will groupByChecksum images using meta-data then checksum
         try {
             return files.parallelStream()
@@ -126,7 +128,7 @@ public abstract class Record<T> implements LoggingInterface {
                     .filter(ir -> ir.getChecksum() != 0L)
                     .collect(Collectors.groupingByConcurrent(Record::getChecksum)).entrySet()
                     .parallelStream().filter(e -> e.getValue().size() > 1)
-                    .collect(Collectors.toConcurrentMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));
+                    .collect(Collectors.toConcurrentMap(e -> e.getKey(), e -> new ArrayList<>(e.getValue())));
         } catch (RuntimeException e) {
             LoggingInterface.staticLog("Error while grouping...");
             throw new ExecutionException(e);

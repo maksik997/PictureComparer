@@ -23,7 +23,6 @@ public interface LoggingInterface {
      * @param ex
      *        Exception to be printed in log.
      */
-    @Deprecated
     default void log(Exception ex, String msg) {
         Logger.error(ex, msg +  " Please refer to error.txt file.");
     }

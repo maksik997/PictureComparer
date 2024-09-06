@@ -1,4 +1,4 @@
-package pl.magzik.algorithms.dct;
+package pl.magzik.algorithms.math.dct;
 
 import org.jtransforms.dct.DoubleDCT_1D;
 

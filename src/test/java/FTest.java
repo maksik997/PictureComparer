@@ -1,3 +1,5 @@
+import pl.magzik.algorithms.PerceptualHash;
+import pl.magzik.algorithms.PixelByPixel;
 import pl.magzik.predicates.ImageFilePredicate;
 import pl.magzik.io.FileOperator;
 import pl.magzik.structures.ImageRecord;
@@ -22,17 +24,6 @@ public class FTest {
             new File("D:\\Data")
         };
 
-        // Simple function that creates ImageRecords (groupByFunction)
-        Function<File, ImageRecord> createImageRecord = file -> {
-            try {
-                return new ImageRecord(file);
-            } catch (IOException ex) {
-                LoggingInterface.staticLog(String.format("Skipping file: %s", file.getName()));
-                LoggingInterface.staticLog(ex, String.format("Skipping file: %s", file.getName()));
-            }
-            return null;
-        };
-
         List<File> f = fo.load(files);
 
         long time = System.currentTimeMillis();
@@ -42,9 +33,10 @@ public class FTest {
 
 
         time = System.currentTimeMillis();
-        var map = Record.process(f, createImageRecord, ImageRecord.pHashFunction, ImageRecord.pixelByPixelFunction);
+
+        var map = Record.process(f, ImageRecord::create, new PerceptualHash(), new PixelByPixel());
         System.out.println("===========");
-        for (List<Record<BufferedImage>> list : map.values()) {
+        for (List<?> list : map.values()) {
             System.out.println(list);
         }
         System.out.println("Found: "+ map.size());
