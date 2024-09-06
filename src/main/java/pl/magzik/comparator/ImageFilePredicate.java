@@ -1,4 +1,4 @@
-package pl.magzik.Comparator;
+package pl.magzik.comparator;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,6 +21,7 @@ public class ImageFilePredicate implements FilePredicate {
         MAGIC_NUMBERS.put("J2K", List.of("FF4FFF51"));
         MAGIC_NUMBERS.put("JPC", List.of("FF4FFF51"));
     }
+
 
     @Override
     public boolean test(File file) throws IOException {

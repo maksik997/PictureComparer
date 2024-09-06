@@ -1,6 +1,6 @@
-package pl.magzik.Structures;
+package pl.magzik.structures;
 
-import pl.magzik.Utils.LoggingInterface;
+import pl.magzik.utils.LoggingInterface;
 
 import java.io.File;
 import java.io.IOException;

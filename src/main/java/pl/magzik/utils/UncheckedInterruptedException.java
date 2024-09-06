@@ -1,4 +1,4 @@
-package pl.magzik.Utils;
+package pl.magzik.utils;
 
 import java.io.UncheckedIOException;
 import java.util.Objects;

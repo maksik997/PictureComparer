@@ -1,6 +1,6 @@
-package pl.magzik.Structures;
+package pl.magzik.structures;
 
-import pl.magzik.Algorithms.DCT;
+import pl.magzik.algorithms.DCT;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

@@ -1,8 +1,7 @@
-import pl.magzik.Comparator.ImageFilePredicate;
-import pl.magzik.IO.FileOperator;
-import pl.magzik.Structures.ImageRecord;
-import pl.magzik.Structures.Record;
-import pl.magzik.Utils.LoggingInterface;
+import pl.magzik.comparator.ImageFilePredicate;
+import pl.magzik.io.FileOperator;
+import pl.magzik.structures.ImageRecord;
+import pl.magzik.utils.LoggingInterface;
 
 
 import java.util.List;
@@ -14,12 +13,10 @@ import java.util.function.Function;
 
 public class FTest {
     public static void main(String[] args) throws IOException, InterruptedException, TimeoutException, ExecutionException {
-        FileOperator fo = new FileOperator();
+        FileOperator fo = new FileOperator(new ImageFilePredicate(), Integer.MAX_VALUE);
 
         File[] files = {
-                /*
-                * Directories to check files for
-                */
+            new File("D:\\Data")
         };
 
         // Simple function that creates ImageRecords (groupByFunction)
@@ -33,14 +30,11 @@ public class FTest {
             return null;
         };
 
-        List<File> f = fo.loadFiles(Integer.MAX_VALUE, new ImageFilePredicate(), files);
+        List<File> f = fo.load(files);
 
+        long time = System.currentTimeMillis();
         System.out.println(f);
         System.out.println("Found: "+ f.size());
-
-        System.out.println("Record.process output: ");
-        System.out.println(Record.process(f, createImageRecord, ImageRecord.pHashFunction, ImageRecord.pixelByPixelFunction));
-        // And here ImageRecord.[name] represents built-in functions to use.
-
+        System.out.println("Found in: " + (System.currentTimeMillis() - time) + " milliseconds");
     }
 }

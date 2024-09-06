@@ -1,4 +1,4 @@
-package pl.magzik.Algorithms;
+package pl.magzik.algorithms;
 
 import java.util.Arrays;
 import java.util.Objects;
