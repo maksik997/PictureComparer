@@ -6,7 +6,7 @@
 
     <groupId>pl.magzik</groupId>
     <artifactId>PictureComparer</artifactId>
-    <version>0.6</version>
+    <version>0.6.1</version>
 
     <properties>
         <maven.compiler.source>19</maven.compiler.source>
