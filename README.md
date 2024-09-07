@@ -1,69 +1,97 @@
+# Image Comparison Library
+
 Author: [GitHub](https://github.com/maksik997)
-# WARNING!
-Largest test date size: (about 40 000 different files).
-The library could not delete all duplicates, but surely it will extract all pixel-to-pixel images.
-It Could be used to find similar pictures.
 
-## Information:
-- Please report any bugs :)
-- If you have any idea (after all, you're reading this) please let me know. I could use some nice ideas to enhance this library.
+## WARNING!
 
-# Functions: 
-The library shares some packages: Algorithms, Comparator, IO, Structures, and Utils.
-- **Algorithms**: 
-Simple implementation of Fast DCT Lee algorithm (nothing to be expected here),
-  also powered by ChatGPT (as short-cut for any other implementation).
-Also with quantization method (using JPEG quantization table).
-- **Comparator**: Two classes for File Predicate, with implementation for images. It uses magic numbers as it was in previous versions. Functional interface shares test method which return boolean and take File and could throw IOException. So it can be used in case someone would want to create something themselves.
-- **IO**: FileOperator class which can load images efficiently (using new Java's virtual threads). Method takes depth (used by FileVisitor), FilePredicate to ensure that we take only valid files and collection/array of File objects.
-- **Structures**: Classes for Records. Represents image with an added checksum. Shares process, groupByChecksum methods (Process for processing grouped by checksum data and groupByChecksum for grouping by checksum). And ImageRecord, which shares two public static fields, that are Function objects that allows using Record's process function to process a given image collection.
-- **Utils**:Logging interface for Tinylog with tinylog.properties settings.
-
-# Description:
-This library was created to fulfill my own ambition to create my image comparing app into two parts.
-You can edit anything there, create your own function that returns this monstrosity...
-Or even enhance it.
-I don't know why anyone would want to do this, but anyway, I had a great time creating it.
-The library works in a way that satisfies me.
-Please ask if you have any questions.
-
-# Usage of a library version 0.5 or grater:
-Simple code that describes usage:
-```java
-public static void main(String[] args) throws IOException, InterruptedException, TimeoutException, ExecutionException {
-        FileOperator fo = new FileOperator();
-
-        File[] files = {
-            /*
-            * Directories to check files for 
-            */
-        };
-        
-        // Simple function that creates ImageRecords (groupByFunction)
-        Function<File, ImageRecord> createImageRecord = file -> {
-            try {
-                return new ImageRecord(file);
-            } catch (IOException ex) {
-                LoggingInterface.staticLog(String.format("Skipping file: %s", file.getName()));
-                LoggingInterface.staticLog(ex, String.format("Skipping file: %s", file.getName()));
-            }
-            return null;
-        };
-
-        List<File> f = fo.loadFiles(Integer.MAX_VALUE, new ImageFilePredicate(), files);
-
-        System.out.println(f);
-        System.out.println("Found: "+ f.size());
-        
-        System.out.println("Record.process output: ");
-        System.out.println(Record.process(f, createImageRecord, ImageRecord.pHashFunction, ImageRecord.pixelByPixelFunction));
-        // And here ImageRecord.[name] represents built-in functions to use. 
-        
-    }
-```
+**Largest test dataset size**: Approximately 40,000 different files.
 
 ### Note:
-* App uses Tinylog as a logging service, and uses TwelveMonkeys as ImageIO enhancement.
-* Files extensions supported: all that are supported by `ImageIO` class and all that are supported by: `TwelveMonkeys` (used packages: `bmp`, `tiff`, `jpeg`, `core`).
-* The library was tested on Windows 11.
-* Jdk version: **22**
+The library may not be able to delete all duplicates, but it should extract all pixel-to-pixel images.
+It can be used to find similar pictures.
+
+## Information
+
+- Please report any bugs you encounter.
+- If you have ideas for enhancements (after all, you're reading this), please let me know. I welcome suggestions to improve this library.
+
+## Library Structure
+
+The library is organized into several packages:
+
+- **Algorithms**: Contains:
+  > An interface for simple algorithm creation and usage.
+  > A simple utility interface for image reading.
+  > An implementation of DCT algorithm.
+  > An implementation of Perceptual Hash algorithm.
+  > An implementation of Pixel by pixel comparison algorithm
+- **IO**: Contains:
+  > A FileOperations interface, which gives access to various IO related methods (loading, moving, deleting of files).
+  > An implementation of FileOperations interface, FileOperator class, which allows you to load and pre-validate loaded images (reading headers of files and checking if supported image type). This class uses virtual threading in the default implementation.
+  > A FileValidator class, which validates given files. Implementation uses FilePredicate, which in its implementation (ImageFilePredicate) uses format magic numbers for validation.
+  > A FileVisitor class, which is an extension of SimpleFileVisitor and handles loading files from filesystem trees. 
+- **Predicates:** Contains:
+  > A FilePredicate functional interface, which is similar to Java's Predicate interface, but throws IOException.
+  > An implementation of FilePredicate interface, ImageFilePredicate, which uses file headers and format magic numbers for supported files validation.
+- **Structures**: Contains:
+  > An abstract Record class, which represents file record used in processing, record class has its file reference (File field) and checksum (long field).
+  > An implementation of Record, ImageRecord, which represents Record for images, and uses CRC32 algorithm for checksum extraction. 
+- **Utils**: Includes a logging interface for Tinylog, with configurations in `tinylog.properties`.
+- **And one class without a package:**
+  > RecordProcessor, which handles record processing: grouping by checksum and extraction of duplicates using given algorithms.
+
+## Description
+
+This library was created to fulfill my ambition to develop an image comparison application. You can modify and extend the library as needed. I had a great time creating it, and it meets my requirements. If you have any questions or suggestions, feel free to ask!
+
+### Implementation
+To customize logging, you can set up your own configuration by passing the following argument to your application:
+```properties
+-Dtinylog.configuration=[PATH]/tinylog.properties
+```
+[More info](https://tinylog.org/v2/configuration/)
+
+### Specification: 
+- App uses Tinylog as a logging service, uses TwelveMonkeys as ImageIO enhancement, and uses JTransforms for better DCT implementation.
+- Files extensions supported: all that are supported by `ImageIO` class and all that are supported by: `TwelveMonkeys` (used packages: `bmp`, `tiff`, `jpeg`, `core`).
+- The library was tested on Windows 11.
+- JDK version: **22**
+
+### External libraries used:
+- [Tinylog](https://tinylog.org/v2/)
+- [TwelveMonkeys](https://github.com/haraldk/TwelveMonkeys)
+- [JTransforms](https://github.com/wendykierp/JTransforms)
+
+### Usage example:
+```java
+public static void main(String[] args) throws IOException {
+  FileOperator fo = new FileOperator(new ImageFilePredicate(), Integer.MAX_VALUE);
+
+  File[] files = {
+          /*
+          * Files to be loaded.
+          * */
+  };
+
+  long time = System.currentTimeMillis();
+
+  System.out.println("=========== LOADING ===========");
+  List<File> f = fo.load(files);
+
+  System.out.println(f);
+  System.out.println("Found: "+ f.size());
+  System.out.println("Found in: " + (System.currentTimeMillis() - time) + " milliseconds");
+
+  time = System.currentTimeMillis();
+
+  RecordProcessor rp = new RecordProcessor();
+  var map = rp.process(f, ImageRecord::create, new PerceptualHash(), new PixelByPixel());
+
+  System.out.println("=========== PROCESSING ===========");
+  for (List<?> list : map.values()) {
+    System.out.println(list);
+  }
+  System.out.println("Found: "+ map.size());
+  System.out.println("Found in: " + (System.currentTimeMillis() - time) + " milliseconds");
+}
+```
