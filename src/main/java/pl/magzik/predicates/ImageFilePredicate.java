@@ -3,7 +3,9 @@ package pl.magzik.predicates;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A predicate for validating image files based on their magic numbers.
