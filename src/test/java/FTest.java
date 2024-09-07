@@ -1,46 +1,42 @@
-import pl.magzik.Comparator.ImageFilePredicate;
-import pl.magzik.IO.FileOperator;
-import pl.magzik.Structures.ImageRecord;
-import pl.magzik.Structures.Record;
-import pl.magzik.Utils.LoggingInterface;
+import pl.magzik.algorithms.PerceptualHash;
+import pl.magzik.algorithms.PixelByPixel;
+import pl.magzik.io.FileOperator;
+import pl.magzik.predicates.ImageFilePredicate;
+import pl.magzik.structures.ImageRecord;
 
-
-import java.util.List;
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
+import java.util.List;
 
 public class FTest {
-    public static void main(String[] args) throws IOException, InterruptedException, TimeoutException, ExecutionException {
-        FileOperator fo = new FileOperator();
+    public static void main(String[] args) throws IOException {
+        FileOperator fo = new FileOperator(new ImageFilePredicate(), Integer.MAX_VALUE);
 
         File[] files = {
-                /*
-                * Directories to check files for
-                */
+            /*
+            * Files to be loaded.
+            * */
         };
 
-        // Simple function that creates ImageRecords (groupByFunction)
-        Function<File, ImageRecord> createImageRecord = file -> {
-            try {
-                return new ImageRecord(file);
-            } catch (IOException ex) {
-                LoggingInterface.staticLog(String.format("Skipping file: %s", file.getName()));
-                LoggingInterface.staticLog(ex, String.format("Skipping file: %s", file.getName()));
-            }
-            return null;
-        };
+        long time = System.currentTimeMillis();
 
-        List<File> f = fo.loadFiles(Integer.MAX_VALUE, new ImageFilePredicate(), files);
+        System.out.println("=========== LOADING ===========");
+        List<File> f = fo.load(files);
 
         System.out.println(f);
         System.out.println("Found: "+ f.size());
+        System.out.println("Found in: " + (System.currentTimeMillis() - time) + " milliseconds");
 
-        System.out.println("Record.process output: ");
-        System.out.println(Record.process(f, createImageRecord, ImageRecord.pHashFunction, ImageRecord.pixelByPixelFunction));
-        // And here ImageRecord.[name] represents built-in functions to use.
+        time = System.currentTimeMillis();
 
+        RecordProcessor rp = new RecordProcessor();
+        var map = rp.process(f, ImageRecord::create, new PerceptualHash(), new PixelByPixel());
+
+        System.out.println("=========== PROCESSING ===========");
+        for (List<?> list : map.values()) {
+            System.out.println(list);
+        }
+        System.out.println("Found: "+ map.size());
+        System.out.println("Found in: " + (System.currentTimeMillis() - time) + " milliseconds");
     }
 }
