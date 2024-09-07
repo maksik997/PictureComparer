@@ -1,3 +1,4 @@
+import pl.magzik.RecordProcessor;
 import pl.magzik.algorithms.PerceptualHash;
 import pl.magzik.algorithms.PixelByPixel;
 import pl.magzik.io.FileOperator;

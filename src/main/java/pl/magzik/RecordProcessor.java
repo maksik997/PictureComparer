@@ -1,3 +1,5 @@
+package pl.magzik;
+
 import pl.magzik.algorithms.Algorithm;
 import pl.magzik.structures.Record;
 import pl.magzik.utils.LoggingInterface;
