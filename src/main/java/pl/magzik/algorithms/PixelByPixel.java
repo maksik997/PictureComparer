@@ -1,10 +1,9 @@
 package pl.magzik.algorithms;
 
-import pl.magzik.structures.ImageRecord;
-
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.Raster;
+import java.io.File;
 import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,45 +15,43 @@ import java.util.stream.Collectors;
  * Images are loaded from files and compared to find matching records.
  * </p>
  */
-public class PixelByPixel implements Algorithm<ImageRecord, ImageRecord> {
+public class PixelByPixel implements Algorithm<BufferedImage> {
 
-    private final Map<ImageRecord, SoftReference<BufferedImage>> imageCache = new HashMap<>();
+    private final Map<File, SoftReference<BufferedImage>> imageCache = new HashMap<>();
 
     @Override
-    public Map<ImageRecord, List<ImageRecord>> apply(List<ImageRecord> group) {
-        Set<ImageRecord> processed = new LinkedHashSet<>();
+    public Map<BufferedImage, Set<File>> apply(Set<File> group) {
+        Set<File> processed = new LinkedHashSet<>();
 
         return group.stream()
-                .filter(record -> !processed.contains(record))
+                .filter(f -> !processed.contains(f))
                 .peek(processed::add)
                 .collect(Collectors.toMap(
-                    record -> record,
-                    record -> process(record, processed, group)
+                    this::getCachedImage,
+                    f -> process(f, processed, group)
                 ));
     }
 
-    private List<ImageRecord> process(ImageRecord record, Set<ImageRecord> processed, List<ImageRecord> group) {
-        BufferedImage img = getCachedImage(record);
+    private Set<File> process(File file, Set<File> processed, Set<File> group) {
+        BufferedImage img = getCachedImage(file);
 
-        List<ImageRecord> result = new ArrayList<>(
-            group.stream()
-                .filter(r -> record != r)
-                .filter(r -> !processed.contains(r))
-                .filter(r -> compareImages(img, getCachedImage(r)))
-                .toList()
-        );
+        Set<File> result = group.stream()
+            .filter(r -> file != r)
+            .filter(r -> !processed.contains(r))
+            .filter(r -> compareImages(img, getCachedImage(r)))
+            .collect(Collectors.toSet());
 
-        result.add(record);
+        result.add(file);
         return result;
     }
 
-    private BufferedImage getCachedImage(ImageRecord record) {
-        SoftReference<BufferedImage> ref = imageCache.get(record);
+    private BufferedImage getCachedImage(File file) {
+        SoftReference<BufferedImage> ref = imageCache.get(file);
         BufferedImage img = ref != null ? ref.get() : null;
 
         if (img == null) {
-            img = FileUtils.readImage(record.getFile());
-            imageCache.put(record, new SoftReference<>(img));
+            img = FileUtils.readImage(file);
+            imageCache.put(file, new SoftReference<>(img));
         }
 
         return img;

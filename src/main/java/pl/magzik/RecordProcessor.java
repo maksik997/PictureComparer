@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 
 /* NOTE:
 * New workflow:
-*   1. Checksum division. (divide function)
+*   1. Checksum division. (divide function) +
 *   2. Algorithm processing (process function)
-*       2.1. Processing (Algorithm interace)
+*       2.1. Processing (Algorithm interface) +
 *       2.2. Consolidation (consolidate function)
 *   3. Original distinction.
 * */
@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Processor for handling records and applying algorithms to group and analyze files.
  */
+@Deprecated
 public class RecordProcessor implements LoggingInterface {
 
     /**
@@ -40,6 +41,7 @@ public class RecordProcessor implements LoggingInterface {
      * @return a map of grouped records after applying the algorithms
      */
     @SafeVarargs
+    @Deprecated
     public final <R extends Record<?>> Map<?, List<R>> process(Collection<File> files, Function<File, R> checksumFunction, Algorithm<?, R>... algorithms) {
         log("Mapping input files...");
 

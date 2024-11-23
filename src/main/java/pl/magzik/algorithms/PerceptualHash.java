@@ -1,14 +1,12 @@
 package pl.magzik.algorithms;
 
 import pl.magzik.algorithms.math.DCT;
-import pl.magzik.structures.ImageRecord;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
+import java.io.File;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -19,12 +17,13 @@ import java.util.stream.IntStream;
  * and generates hashes. Images are grouped based on their hashes.
  * </p>
  */
-public class PerceptualHash implements Algorithm<String, ImageRecord> {
+public class PerceptualHash implements Algorithm<String> {
 
     private static final int WIDTH = 8, HEIGHT = 8;
 
     @Override
-    public Map<String, List<ImageRecord>> apply(List<ImageRecord> group) {
+    public Map<String, Set<File>> apply(Set<File> group) {
+        List<File> gf = group.stream().toList();
         List<String> hashes = group.stream()
                                     .map(this::resize)
                                     .map(this::extractSample)
@@ -35,18 +34,17 @@ public class PerceptualHash implements Algorithm<String, ImageRecord> {
         if (hashes.stream().anyMatch(Objects::isNull))
             throw new NullPointerException("Some hashes are null.");
 
-        return IntStream.range(0, group.size())
-                .boxed()
-                .collect(Collectors.groupingBy(
-                    hashes::get,
-                    Collectors.mapping(group::get, Collectors.toList())
-                )).entrySet().stream()
-                .filter(e -> e.getValue().size() > 1)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return IntStream.range(0, gf.size())
+            .boxed()
+            .collect(Collectors.groupingBy(
+                hashes::get,
+                Collectors.mapping(gf::get, Collectors.toList())
+            )).entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> new HashSet<>(e.getValue())));
     }
 
-    private BufferedImage resize(ImageRecord record) {
-        BufferedImage image = FileUtils.readImage(record.getFile());
+    private BufferedImage resize(File file) {
+        BufferedImage image = FileUtils.readImage(file);
 
         BufferedImage resizedImage = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_BYTE_GRAY);
         Graphics2D g = resizedImage.createGraphics();

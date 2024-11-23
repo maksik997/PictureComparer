@@ -5,6 +5,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
+/**
+ * Functional interface representing grouping function.
+ * Processes given file collection and divide it on subsets that share same characteristic.
+ * */
+@FunctionalInterface
 public interface Grouper {
 
     /**

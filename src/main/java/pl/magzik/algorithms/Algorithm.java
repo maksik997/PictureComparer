@@ -1,25 +1,29 @@
 package pl.magzik.algorithms;
 
-import pl.magzik.structures.Record;
-
-import java.util.List;
+import java.io.File;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Functional interface representing an algorithm that processes a group of records
- * and returns a mapping of a key to lists of records.
- *
- * @param <T> the type of the key used in the resulting map
- * @param <V> the type of the records being processed, which extends {@link Record}
- */
+ * Functional interface representing algorithm.
+ * Applies some operation set to files, resulting in divided input set of files mapped by some key K.
+ * */
 @FunctionalInterface
-public interface Algorithm <T, V extends Record<?>> {
+public interface Algorithm <K> {
 
     /**
-     * Applies the algorithm to a list of records and returns a mapping of keys to lists of records.
+     * Applies the algorithm to the given set of files.
+     * The algorithm should divide the given set into smaller subsets, where each subset contains files
+     * that share a specific characteristic (e.g., checksum, hash, metadata, etc.).
+     * <p>
+     * The resulting key (K) should be deterministic, meaning it should consistently map the same set of
+     * files to the same key based on the characteristic used for grouping.
      *
-     * @param group the list of records to process
-     * @return a map where each key is associated with a list of records
-     */
-    Map<T, List<V>> apply(List<V> group);
+     * @param group A set of files to be processed by the algorithm. These files are of a specific type
+     *             (e.g., images), and the goal is to group them based on a shared characteristic.
+     * @return A map where each key corresponds to a subset of files (Set<File>) that share the same characteristic.
+     *        The key should be calculated using data associated with each file, such as file metadata or content.
+     *        The key-value mapping should be deterministic (i.e., the same input group will always produce the same output map).
+     * */
+    Map<K, Set<File>> apply(Set<File> group);
 }
