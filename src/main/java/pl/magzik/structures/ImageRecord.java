@@ -15,6 +15,7 @@ import java.util.zip.CRC32;
  * objects based on image files.
  * </p>
  */
+@Deprecated
 public class ImageRecord extends Record<BufferedImage> {
 
     /**

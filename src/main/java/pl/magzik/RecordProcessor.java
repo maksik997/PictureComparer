@@ -10,6 +10,15 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/* NOTE:
+* New workflow:
+*   1. Checksum division. (divide function)
+*   2. Algorithm processing (process function)
+*       2.1. Processing (Algorithm interace)
+*       2.2. Consolidation (consolidate function)
+*   3. Original distinction.
+* */
+
 /**
  * Processor for handling records and applying algorithms to group and analyze files.
  */
@@ -76,6 +85,7 @@ public class RecordProcessor implements LoggingInterface {
      * @param <R> the type of record
      * @return a map of grouped records by their checksum
      */
+    @Deprecated
     private <R extends Record<?>> Map<Object, List<R>> checksumGrouping(Collection<File> files, Function<File, R> checksumFunction) {
         Map<Object, List<R>> groupedRecords = files.parallelStream()
                 .map(f -> applyChecksum(f, checksumFunction))
@@ -96,6 +106,7 @@ public class RecordProcessor implements LoggingInterface {
      * @param <R> the type of record
      * @return the record created from the file, or null if an exception occurred
      */
+    @Deprecated
     private <R extends Record<?>> R applyChecksum(File file, Function<File, R> checksumFunction) {
         try {
             return checksumFunction.apply(file);

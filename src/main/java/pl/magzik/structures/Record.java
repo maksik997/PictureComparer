@@ -11,6 +11,7 @@ import java.util.Objects;
  *
  * @param <T> the type of the record
  */
+@Deprecated
 public abstract class Record<T> implements LoggingInterface {
 
     protected final File file;
