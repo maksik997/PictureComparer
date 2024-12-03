@@ -1,5 +1,7 @@
 package pl.magzik;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.magzik.algorithms.Algorithm;
 import pl.magzik.grouping.Grouper;
 
@@ -48,6 +50,8 @@ import java.util.stream.Collectors;
  */
 public class Processor {
 
+    private static final Logger logger = LoggerFactory.getLogger(Processor.class);
+
     private final Grouper grouper;
 
     private final Set<Algorithm<?>> algorithms;
@@ -58,7 +62,7 @@ public class Processor {
         if (algorithms.isEmpty() || algorithms.contains(null)) throw new NullPointerException("Algorithm set is empty or contains null.");
 
         this.grouper = grouper;
-        this.algorithms = Set.copyOf(algorithms);
+        this.algorithms = new LinkedHashSet<>(algorithms);
     }
 
     /**
@@ -98,17 +102,17 @@ public class Processor {
             throw new NullPointerException("Input collection or its elements must not be null.");
         }
 
-        System.out.println("Processing started..."); // Todo Logging fix.
+        logger.info("Processing started...");
 
-        System.out.println("Dividing input collection."); // Todo Logging fix.
+        logger.info("Dividing input collection.");
         Set<Set<File>> groupedFiles = grouper.divide(files); // This variable must contain only subsets with more than 1 element.
-        System.out.println("Input collection division completed."); // Todo Logging fix.
+        logger.info("Input collection division completed.");
 
-        System.out.println("Proceeding to algorithm application."); // Todo Logging fix.
+        logger.info("Proceeding to algorithm application.");
         Map<?, Set<File>> algorithmOutput;
         for (Algorithm<?> algorithm : algorithms) {
             try {
-                System.out.println("Applying algorithm: " + algorithm.getClass().getSimpleName()); // Todo Logging fix.
+                logger.info("Applying algorithm: {}", algorithm.getClass().getSimpleName());
 
                 algorithmOutput = groupedFiles.parallelStream()
                         .map(algorithm::apply)
@@ -118,13 +122,13 @@ public class Processor {
                                 Map.Entry::getValue,
                                 this::consolidate
                         ));
-                System.out.println("Algorithm applied. Eliminating unique files..."); // Todo Logging fix.
+                logger.info("Algorithm applied. Eliminating unique files...");
 
                 groupedFiles = algorithmOutput.values()
                         .stream().filter(s -> s.size() > 1)
                         .collect(Collectors.toSet());
 
-                System.out.println("Step finished."); // Todo Logging fix.
+                logger.info("Step finished.");
             } catch (UncheckedIOException e) {
                 throw new IOException("Couldn't use algorithm: " + algorithm.getClass().getSimpleName() + "\nBecause: " + e.getMessage(), e.getCause());
             }

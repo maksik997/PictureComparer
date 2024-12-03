@@ -1,5 +1,8 @@
 package pl.magzik.grouping;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,6 +12,8 @@ import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
 public class CRC32Grouper implements Grouper {
+
+    private static final Logger logger = LoggerFactory.getLogger(CRC32Grouper.class);
 
     @Override
     public Set<Set<File>> divide(Collection<File> col) {
@@ -20,7 +25,7 @@ public class CRC32Grouper implements Grouper {
                     if (checksum != 0L)
                         return new AbstractMap.SimpleEntry<>(checksum, f);
                 } catch (IOException e) {
-                    System.out.println("Error processing a file: " + f.getName()); // Todo, change for something of log.
+                    logger.error("Error while processing a file: {}", f.getName(), e);
                 }
                 return null;
             })
