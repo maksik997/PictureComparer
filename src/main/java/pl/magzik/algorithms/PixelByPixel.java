@@ -84,7 +84,8 @@ public class PixelByPixel implements Algorithm<File> {
      * @param groupQueue The queue of image files to be processed. The queue must be mutable.
      */
     private void process(@NotNull Map<File, Set<File>> result, @NotNull Queue<File> groupQueue) {
-        File key = groupQueue.remove();
+        File key = groupQueue.peek();
+        assert key != null;
         Set<File> values = groupQueue.parallelStream()
             .filter(v -> compareImages(getCachedImage(key), getCachedImage(v)))
             .collect(Collectors.toSet());

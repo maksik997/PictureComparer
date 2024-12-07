@@ -94,7 +94,7 @@ public class Processor {
      *     </li>
      *     <li><b>Original File Identification:</b> Identifies the "original" file in each final group. The first file in each group
      *     is treated as the original, and the method reorganizes the groups into a map where each key is an original file, and the
-     *     value is a set of similar files.</li>
+     *     value is a set of similar files. However, there is no way in current state to know which file from the group will be considered as original.</li>
      * </ol>
      * </p>
      *
@@ -111,7 +111,7 @@ public class Processor {
      */
     @NotNull
     @Contract("_ -> new")
-    public Map<File, Set<File>> process(@NotNull Collection<File> files) throws IOException {
+    public Map<File, Set<File>> process(@NotNull Collection<@NotNull File> files) throws IOException {
         Objects.requireNonNull(files, "Input collection must not be null");
         if (files.contains(null)) {
             throw new NullPointerException("Input collection must not contain null.");

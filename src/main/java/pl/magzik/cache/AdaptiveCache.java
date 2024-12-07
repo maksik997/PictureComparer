@@ -42,7 +42,7 @@ public class AdaptiveCache {
      * Singleton holder for the {@link AdaptiveCache} instance.
      */
     private static final class InstanceHolder {
-        private static final AdaptiveCache instance = new AdaptiveCache(getMaximumWeight());
+        private static AdaptiveCache instance = new AdaptiveCache(getMaximumWeight());
     }
 
     /**
@@ -53,6 +53,10 @@ public class AdaptiveCache {
     @NotNull
     public static AdaptiveCache getInstance() {
         return InstanceHolder.instance;
+    }
+
+    public static void setInstance(AdaptiveCache adaptiveCache) {
+        InstanceHolder.instance = adaptiveCache;
     }
 
     /**
