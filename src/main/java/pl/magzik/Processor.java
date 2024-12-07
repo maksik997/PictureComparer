@@ -119,6 +119,7 @@ public class Processor {
         logger.info("Processing started...");
 
         logger.info("Dividing input collection.");
+
         Set<Set<File>> groupedFiles = grouper.divide(files);
                         // This variable must contain only subsets with more than 1 element.
 
@@ -224,7 +225,7 @@ public class Processor {
                 .map(s -> s.stream().toList())
                 .collect(Collectors.toMap(
                         List::getFirst,
-                        s -> new HashSet<>(s.subList(1, s.size()))
+                    s -> new HashSet<>(s.subList(1, s.size()))
                 ));
     }
 

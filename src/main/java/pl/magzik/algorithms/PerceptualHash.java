@@ -1,10 +1,13 @@
 package pl.magzik.algorithms;
 
 import pl.magzik.algorithms.math.DCT;
+import pl.magzik.cache.AdaptiveCache;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,7 +47,12 @@ public class PerceptualHash implements Algorithm<String> {
     }
 
     private BufferedImage resize(File file) {
-        BufferedImage image = FileUtils.readImage(file);
+        BufferedImage image;
+        try {
+            image = AdaptiveCache.getInstance().get(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
 
         BufferedImage resizedImage = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_BYTE_GRAY);
         Graphics2D g = resizedImage.createGraphics();
