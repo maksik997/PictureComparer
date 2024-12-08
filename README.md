@@ -41,9 +41,29 @@ The application requires:
 
 **Easy way:**
 
-Visit the [Releases](https://github.com/maksik997/PictureComparer/releases) section on GitHub to download the latest .jar file, 
-then add it to your project dependencies.
+To add this library to your project, use [jitpack.io](https://jitpack.io/):
+1. Add repository JitPack to your project:
+**Maven** (`pom.xml`)
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+2. Add the dependency:
+**Maven** (`pom.xml`)
+```xml
+<dependency>
+    <groupId>com.github.maksik997</groupId>
+    <artifactId>PictureComparer</artifactId>
+    <version>[Version]</version>
+</dependency>
+```
+Replace `[Version]` with valid version (e.g., `0.7.0`)
 
+**Note:** In the future, this library will likely be published to the Maven Central Repository. For now, JitPack is the recommended way to integrate it into your project.
 
 **Building from source:**
 
@@ -56,6 +76,7 @@ cd PictureComparer
 ```bash
 mvn clean package
 ```
+The built `.jar` file will be available in the `target` directory.
 
 ## Configuration:
 
