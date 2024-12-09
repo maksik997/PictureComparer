@@ -1,6 +1,7 @@
 package pl.magzik.io;
 
-import pl.magzik.utils.LoggingInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -29,7 +30,8 @@ import java.util.concurrent.ExecutorService;
  * @see SimpleFileVisitor
  * @see FileValidator
  */
-public class FileVisitor extends SimpleFileVisitor<Path> implements LoggingInterface {
+public class FileVisitor extends SimpleFileVisitor<Path> {
+    private static final Logger logger = LoggerFactory.getLogger(FileVisitor.class);
 
     private final ExecutorService executorService;
     private final FileValidator fileValidator;
@@ -68,7 +70,7 @@ public class FileVisitor extends SimpleFileVisitor<Path> implements LoggingInter
                     files.add(file);
                 }
             } catch (IOException e) {
-                log(e);
+                logger.error(e.getMessage(), e);
             }
         }, executorService));
 
@@ -87,7 +89,7 @@ public class FileVisitor extends SimpleFileVisitor<Path> implements LoggingInter
      */
     @Override
     public FileVisitResult visitFileFailed(Path file, IOException exc) {
-        log("Skipping file: " + file + ", because of: " + exc);
+        logger.warn("Skipping file: {}, because of: {}", file, exc.getMessage());
         return FileVisitResult.CONTINUE;
     }
 

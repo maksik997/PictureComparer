@@ -1,7 +1,8 @@
 package pl.magzik.io;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.magzik.predicates.FilePredicate;
-import pl.magzik.utils.LoggingInterface;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,7 +68,8 @@ import java.util.stream.Stream;
  *     <li>Consider the impact of concurrent file operations on system performance and ensure that your use case is suitable for virtual threading.</li>
  * </ul>
  */
-public class FileOperator implements FileOperation, LoggingInterface {
+public class FileOperator implements FileOperation {
+    private static final Logger logger = LoggerFactory.getLogger(FileOperator.class);
 
     private final FileValidator fileValidator;
     private int depth;
@@ -114,21 +116,21 @@ public class FileOperator implements FileOperation, LoggingInterface {
     @Override
     public List<File> load(Collection<File> files) throws IOException {
         Objects.requireNonNull(files, "files must not be null");
-        log("Loading input sources...");
-        log("Pre-validating input sources...");
+        logger.info("Loading input sources...");
+        logger.info("Pre-validating input sources...");
         fileValidator.preValidate(files);
-        log("Sources pre-validated.");
+        logger.info("Sources pre-validated.");
 
-        log("Regular file validation...");
+        logger.info("Regular file validation...");
         List<File> out = handleRegularFiles(files);
 
-        log("Directory validation...");
+        logger.info("Directory validation...");
 
         out = Stream.concat(out.stream(), handleDirectories(files).stream())
                 .distinct()
                 .toList();
 
-        log("Input files validated.");
+        logger.info("Input files validated.");
 
         return out;
     }
@@ -156,7 +158,7 @@ public class FileOperator implements FileOperation, LoggingInterface {
                         if (fileValidator.validate(f))
                             return f;
                     } catch (IOException e) {
-                        log(e);
+                        logger.error(e.getMessage(), e);
                     }
                     return null;
                 }, executorService))
@@ -192,7 +194,7 @@ public class FileOperator implements FileOperation, LoggingInterface {
                     try {
                         Files.walkFileTree(d, new HashSet<>(), depth, fv);
                     } catch (IOException e) {
-                        log(e);
+                        logger.error(e.getMessage(), e);
                     }
                 }, executorService))
                 .toList();
@@ -220,7 +222,7 @@ public class FileOperator implements FileOperation, LoggingInterface {
                         StandardCopyOption.REPLACE_EXISTING
                     );
                 } catch (IOException e) {
-                    log(e);
+                    logger.error(e.getMessage(), e);
                     throw new UncheckedIOException(e);
                 }
             }));
@@ -242,7 +244,7 @@ public class FileOperator implements FileOperation, LoggingInterface {
                     try {
                         Files.delete(f);
                     } catch (IOException e) {
-                        log(e);
+                        logger.error(e.getMessage(), e);
                         throw new UncheckedIOException(e);
                     }
                 }));
